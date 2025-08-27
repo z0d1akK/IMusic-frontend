@@ -1,0 +1,122 @@
+:root {
+    --dark-bg:  #212529;
+    --light-bg: #f8f9fa;
+    --text-light: #f8f9fa;
+    --text-muted: #ccc;
+    --btn-dark: #333;
+    --btn-dark-hover: #444;
+    --btn-outline: #666;
+    --danger: #d9534f;
+    --accent: #ffc107;
+}
+
+.navbar {
+    background-color: var(--dark-bg) !important;
+    border-bottom: 1px solid #222;
+}
+
+.navbar .navbar-brand,
+.navbar .nav-link,
+.navbar .dropdown-toggle {
+    color: var(--text-light) !important;
+}
+
+.navbar .nav-link:hover,
+.navbar .dropdown-toggle:hover {
+    color: var(--accent) !important;
+}
+
+.navbar .btn,
+.navbar .dropdown-menu {
+    font-weight: 500;
+}
+
+.dropdown-menu {
+    background-color: var(--dark-bg);
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.dropdown-item {
+    color: var(--text-light);
+}
+
+.dropdown-item:hover {
+    background-color: var(--btn-dark-hover);
+}
+
+.btn-dark {
+    background-color: var(--btn-dark);
+    color: var(--text-light);
+    border: none;
+}
+
+.btn-dark:hover {
+    background-color: var(--btn-dark-hover);
+}
+
+.btn-outline-light {
+    border-color: var(--text-light);
+    color: var(--text-light);
+}
+
+.btn-outline-light:hover {
+    background-color: var(--text-light);
+    color: var(--dark-bg);
+}
+
+.btn-danger {
+    background-color: var(--danger);
+    border: none;
+}
+
+.btn-danger:hover {
+    background-color: #c9302c;
+}
+.btn-yell {
+    background-color: var(--accent);
+    color: var(--text-light);
+    border: none;
+}
+
+.btn-yell:hover{
+    background-color: #fdc317;
+}
+.btn-outline-yell {
+    background-color: var(--text-light);
+    color: var(--accent);
+}
+
+.btn-outline-yell:hover {
+    background-color: #daa407;
+}
+
+footer {
+    background-color: var(--dark-bg);
+    color: var(--text-muted);
+}
+
+body,
+main {
+    background-color: var(--light-bg);
+    color: #000;
+}
+
+.card {
+    background-color: #fff;
+    border: 1px solid #ddd;
+}
+
+.user-dropdown-button {
+    color: #f8f9fa;
+    background-color: transparent;
+    border: none;
+    transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+.user-dropdown-button:hover,
+.user-dropdown-button:focus,
+.user-dropdown-button:active,
+.user-dropdown-button.show {
+    color: #ffc107;
+}
