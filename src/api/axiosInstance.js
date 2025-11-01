@@ -48,16 +48,16 @@ axiosInstance.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        // if (response) {
-        //     if (
-        //         (response.status === 401 || response.status === 403) &&
-        //         !isAuthPath(config.url)
-        //     ) {
-        //         window.location.href = '/unauthorized';
-        //     } else if (response.status === 404) {
-        //         window.location.href = '/notfound';
-        //     }
-        // }
+        if (response) {
+            if (
+                (response.status === 401 || response.status === 403) &&
+                !isAuthPath(config.url)
+            ) {
+                window.location.href = '/unauthorized';
+            } else if (response.status === 404) {
+                window.location.href = '/notfound';
+            }
+        }
 
         return Promise.reject(error);
     }

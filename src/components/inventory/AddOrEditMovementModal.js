@@ -20,7 +20,7 @@ const AddOrEditMovementModal = ({
 
     useEffect(() => {
         if (isEdit) {
-            setMovementTypeId(editData.movementType?.id || "");
+            setMovementTypeId(editData.movementType?.id ? String(editData.movementType.id) : "");
             setQuantity(editData.quantity);
             setComment(editData.comment || "");
         } else {
@@ -31,9 +31,10 @@ const AddOrEditMovementModal = ({
         setError("");
     }, [editData, show]);
 
+
     const handleSubmit = async () => {
         if (!movementTypeId || !quantity) {
-            setError("Пожалуйста, заполните все обязательные поля.");
+            setError ("Пожалуйста, заполните все обязательные поля.");
             return;
         }
 
@@ -41,10 +42,11 @@ const AddOrEditMovementModal = ({
         try {
             const payload = {
                 productId: product.id,
-                movementTypeId,
+                movementTypeId: Number(movementTypeId),
                 quantity: Number(quantity),
-                comment,
+                comment: comment?.trim() || null,
             };
+
 
             if (isEdit) {
                 await axiosInstance.put(`/inventory-movements/${editData.id}`, payload);
@@ -115,7 +117,11 @@ const AddOrEditMovementModal = ({
                 <Button variant="secondary" onClick={onHide} disabled={saving}>
                     Отмена
                 </Button>
-                <Button variant="warning" onClick={handleSubmit} disabled={saving}>
+                <Button
+                    variant="warning"
+                    onClick={handleSubmit}
+                    disabled={saving || !movementTypeId || !quantity}
+                >
                     {saving ? "Сохранение..." : "Сохранить"}
                 </Button>
             </Modal.Footer>

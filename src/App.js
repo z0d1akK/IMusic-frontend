@@ -20,7 +20,19 @@ import DictionaryManagementPage from "./pages/admin/DictionaryManagementPage";
 import UserManagementPage from "./pages/admin/UserManagementPage";
 import UserEditPage from "./pages/admin/UserEditPage";
 import ClientManagementPage from "./pages/manager/ClientManagementPage";
+import ProductManagementPage from "./pages/admin/ProductManagementPage";
+import ProductFormPage from "./pages/admin/ProductFormPage";
+import CategoryAttributePage from "./pages/admin/CategoryAttributePage";
+import InventoryMovementPage from "./pages/admin/InventoryMovementPage";
+import OrderManagementPage from "./pages/admin/OrderManagementPage";
+
+
 import ClientProfilePage from "./pages/client/ClientProfilePage";
+import CartPage from "./pages/client/CartPage";
+
+import ProductDetailPage from "./pages/ProductsAndCatalogs/ProductDetailPage";
+import ProductCatalogPage from "./pages/ProductsAndCatalogs/ProductCatalogPage";
+
 
 
 function App() {
@@ -52,6 +64,9 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+
+                        <Route path="/catalog" element={<ProductCatalogPage />} />
+                        <Route path="/catalog/:id" element={<ProductDetailPage />} />
 
                         <Route
                             path="/admin"
@@ -91,6 +106,54 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route
+                            path="/admin/product-attributes"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <CategoryAttributePage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/products"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <ProductManagementPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/products/:id"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <ProductFormPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/products/create"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <ProductFormPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/orders/management"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN','MANAGER']}>
+                                    <OrderManagementPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/inventory-movement"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <InventoryMovementPage />
+                                </ProtectedRoute>
+                            }
+                        />
 
                         <Route
                             path="/manager/*"
@@ -108,17 +171,72 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route
+                            path="/manager/product-attributes"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <CategoryAttributePage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/manager/products"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <ProductManagementPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/manager/products/:id"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <ProductFormPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/manager/products/create"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <ProductFormPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/manager/inventory-movement"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <InventoryMovementPage />
+                                </ProtectedRoute>
+                            }
+                        />
 
                         <Route
-                            path="/client/*"
+                            path="/client"
                             element={
                                 <ProtectedRoute allowedRoles={["CLIENT"]}>
                                     <ClientPage/>
                                 </ProtectedRoute>
                             }
                         />
+                        <Route
+                            path="/client/cart"
+                            element={
+                                <ProtectedRoute allowedRoles={['CLIENT']}>
+                                    <CartPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        {/*<Route*/}
+                        {/*    path="/client/orders"*/}
+                        {/*    element={*/}
+                        {/*        <ProtectedRoute allowedRoles={['CLIENT']}>*/}
+                        {/*            <OrdersPage />*/}
+                        {/*        </ProtectedRoute>*/}
+                        {/*    }*/}
+                        {/*/>*/}
 
-                        {/*<Route path="*" element={<Navigate to="/notfound" replace/>}/>*/}
                     </Routes>
                 </div>
                 <Footer/>
