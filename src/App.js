@@ -29,10 +29,11 @@ import OrderManagementPage from "./pages/admin/OrderManagementPage";
 
 import ClientProfilePage from "./pages/client/ClientProfilePage";
 import CartPage from "./pages/client/CartPage";
+import OrdersPage from "./pages/client/OrdersPage";
+
 
 import ProductDetailPage from "./pages/ProductsAndCatalogs/ProductDetailPage";
 import ProductCatalogPage from "./pages/ProductsAndCatalogs/ProductCatalogPage";
-
 
 
 function App() {
@@ -228,14 +229,14 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
-                        {/*<Route*/}
-                        {/*    path="/client/orders"*/}
-                        {/*    element={*/}
-                        {/*        <ProtectedRoute allowedRoles={['CLIENT']}>*/}
-                        {/*            <OrdersPage />*/}
-                        {/*        </ProtectedRoute>*/}
-                        {/*    }*/}
-                        {/*/>*/}
+                        <Route
+                            path="/client/orders"
+                            element={
+                                <ProtectedRoute allowedRoles={['CLIENT']}>
+                                    <OrdersPage />
+                                </ProtectedRoute>
+                            }
+                        />
 
                     </Routes>
                 </div>

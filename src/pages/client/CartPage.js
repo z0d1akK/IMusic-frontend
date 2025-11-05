@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { getImageUrl } from "../../utils/image";
 import axios from '../../api/axiosInstance';
+import { Modal, Button, Form } from "react-bootstrap";
 
 const CartPage = () => {
     const navigate = useNavigate();
@@ -13,6 +14,11 @@ const CartPage = () => {
     const [hasClientProfile, setHasClientProfile] = useState(null);
     const [tempQuantities, setTempQuantities] = useState({});
     const debounceTimers = useRef({});
+
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [deliveryAddress, setDeliveryAddress] = useState("");
+    const [deliveryDate, setDeliveryDate] = useState("");
+    const [comment, setComment] = useState("");
 
     const userId = localStorage.getItem("userId");
     const roles = JSON.parse(localStorage.getItem("roles") || "[]");
@@ -93,11 +99,6 @@ const CartPage = () => {
                 const updatedItems = cartItems.filter(item => item.id !== itemId);
                 setCartItems(updatedItems);
                 calculateTotal(updatedItems);
-                setTempQuantities(prev => {
-                    const copy = { ...prev };
-                    delete copy[itemId];
-                    return copy;
-                });
             })
             .catch(() => alert("Не удалось удалить товар"));
     };
@@ -112,23 +113,32 @@ const CartPage = () => {
             .catch(() => alert("Ошибка при очистке корзины"));
     };
 
-    const handleToCatalog = () => navigate("/catalog");
-    const handleToProduct = (productId) => navigate(`/catalog/${productId}`);
+    const handleCreateOrder = () => {
+        if (cartItems.length === 0) {
+            alert("Корзина пуста");
+            return;
+        }
+        setShowConfirmModal(true);
+    };
 
-    const handleCreateOrder = async () => {
+    const handleConfirmOrder = async () => {
         try {
             setLoading(true);
-            setError(null);
-
             const profileRes = await axios.get('/clients/profile');
             const clientId = profileRes.data.id;
 
             const orderDto = {
                 clientId,
-                createdById: userId,
+                createdBy: parseInt(userId),
+                statusId: 1, // например, "новый"
+                deliveryAddress,
+                deliveryDate,
+                comment,
                 items: cartItems.map(item => ({
                     productId: item.productId,
-                    quantity: tempQuantities[item.id] ?? item.quantity
+                    orderId: null, // создаётся автоматически на сервере
+                    quantity: tempQuantities[item.id] ?? item.quantity,
+                    unitPrice: item.productPrice
                 }))
             };
 
@@ -137,13 +147,13 @@ const CartPage = () => {
             alert(`Заказ #${createRes.data.id} успешно создан!`);
             await axios.delete(`/cart/${cartId}/items`);
             setCartItems([]);
-            setTempQuantities({});
             setTotalPrice(0);
+            setShowConfirmModal(false);
 
-            navigate(`/client/orders/${createRes.data.id}`);
+            navigate("/client/orders");
         } catch (err) {
             console.error(err);
-            setError('Ошибка при создании заказа');
+            setError("Ошибка при создании заказа");
         } finally {
             setLoading(false);
         }
@@ -157,17 +167,9 @@ const CartPage = () => {
             <h2 className="mb-4">Ваша корзина</h2>
 
             {cartItems.length === 0 ? (
-                <>
-                    {hasClientProfile === false ? (
-                        <div className="alert alert-warning">
-                            Ваш профиль клиента ещё не готов. Пожалуйста, обратитесь к менеджеру.
-                        </div>
-                    ) : (
-                        <div className="alert alert-info">
-                            Корзина пуста. <Link to="/catalog" className="alert-link">Добавьте товары из каталога</Link>.
-                        </div>
-                    )}
-                </>
+                <div className="alert alert-info">
+                    Корзина пуста. <Link to="/catalog" className="alert-link">Добавьте товары из каталога</Link>.
+                </div>
             ) : (
                 <>
                     <div className="table-responsive">
@@ -187,11 +189,11 @@ const CartPage = () => {
                                         <div
                                             className="d-flex align-items-center"
                                             style={{ cursor: 'pointer' }}
-                                            onClick={() => handleToProduct(item.productId)}
+                                            onClick={() => navigate(`/catalog/${item.productId}`)}
                                         >
                                             <img
                                                 src={getImageUrl(item.productImagePath)}
-                                                alt={item.productName || 'Товар'}
+                                                alt={item.productName}
                                                 style={{
                                                     width: 60,
                                                     height: 60,
@@ -200,7 +202,7 @@ const CartPage = () => {
                                                     borderRadius: 4
                                                 }}
                                             />
-                                            <span>{item.productName || 'Без названия'}</span>
+                                            <span>{item.productName}</span>
                                         </div>
                                     </td>
                                     <td style={{ maxWidth: "150px" }}>
@@ -231,7 +233,7 @@ const CartPage = () => {
 
                     <div className="d-flex justify-content-between align-items-center mt-2">
                         <div>
-                            <button className="btn btn-secondary me-2" onClick={handleToCatalog}>
+                            <button className="btn btn-secondary me-2" onClick={() => navigate("/catalog")}>
                                 Вернуться в каталог
                             </button>
                             <button className="btn btn-outline-danger" onClick={handleClearCart}>
@@ -251,6 +253,52 @@ const CartPage = () => {
                     </div>
                 </>
             )}
+
+            {/* Модальное окно подтверждения */}
+            <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Подтверждение заказа</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Адрес доставки</Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={deliveryAddress}
+                                onChange={(e) => setDeliveryAddress(e.target.value)}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Дата доставки</Form.Label>
+                            <Form.Control
+                                type="datetime-local"
+                                value={deliveryDate}
+                                onChange={(e) => setDeliveryDate(e.target.value)}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group>
+                            <Form.Label>Комментарий</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                rows={2}
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                            />
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
+                        Отмена
+                    </Button>
+                    <Button variant="primary" onClick={handleConfirmOrder}>
+                        Подтвердить заказ
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 };

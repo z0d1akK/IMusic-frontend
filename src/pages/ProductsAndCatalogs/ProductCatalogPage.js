@@ -12,7 +12,6 @@ export default function ProductCatalogPage() {
 
     const [search, setSearch] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
-    const [unitFilter, setUnitFilter] = useState('');
     const [minPriceFilter, setMinPriceFilter] = useState('');
     const [maxPriceFilter, setMaxPriceFilter] = useState('');
 
@@ -29,10 +28,6 @@ export default function ProductCatalogPage() {
         axios.get('/ref/product-categories')
             .then(res => setCategories(res.data))
             .catch(() => setCategories([]));
-
-        axios.get('/ref/product-units')
-            .then(res => setUnits(res.data))
-            .catch(() => setUnits([]));
     }, []);
 
     const load = () => {
@@ -71,7 +66,7 @@ export default function ProductCatalogPage() {
         }, 500);
 
         return () => clearTimeout(timeout);
-    }, [search, categoryFilter, unitFilter, minPriceFilter, maxPriceFilter, sortField, sortDir, page]);
+    }, [search, categoryFilter, minPriceFilter, maxPriceFilter, sortField, sortDir, page]);
 
 
     const findCategoryName = (categoryId) => {
@@ -120,19 +115,6 @@ export default function ProductCatalogPage() {
                             >
                                 <option value="">Все категории</option>
                                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
-                        </div>
-                        <div className="col-sm">
-                            <select
-                                className="form-select"
-                                value={unitFilter}
-                                onChange={e => {
-                                    setUnitFilter(e.target.value);
-                                    setPage(1);
-                                }}
-                            >
-                                <option value="">Все единицы</option>
-                                {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                             </select>
                         </div>
                         <div className="col-sm">

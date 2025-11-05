@@ -10,11 +10,8 @@ export default function ProductManagementPage() {
 
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
-    const [units, setUnits] = useState([]);
-
     const [search, setSearch] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
-    const [unitFilter, setUnitFilter] = useState('');
     const [minPriceFilter, setMinPriceFilter] = useState('');
     const [maxPriceFilter, setMaxPriceFilter] = useState('');
     const [minStockFilter, setMinStockFilter] = useState('');
@@ -34,10 +31,6 @@ export default function ProductManagementPage() {
         axios.get('/ref/product-categories')
             .then(res => setCategories(res.data))
             .catch(() => setCategories([]));
-
-        axios.get('/ref/product-units')
-            .then(res => setUnits(res.data))
-            .catch(() => setUnits([]));
     }, []);
 
     const load = () => {
@@ -78,7 +71,7 @@ export default function ProductManagementPage() {
         }, 500);
 
         return () => clearTimeout(timeout);
-    }, [search, categoryFilter, unitFilter, minPriceFilter, maxPriceFilter, minStockFilter, maxStockFilter, sortField, sortDir, page]);
+    }, [search, categoryFilter, minPriceFilter, maxPriceFilter, minStockFilter, maxStockFilter, sortField, sortDir, page]);
 
 
     const isIncomplete = product => !product.name?.trim() || product.price == null || !product.unitId || !product.categoryId;
@@ -114,17 +107,6 @@ export default function ProductManagementPage() {
                             >
                                 <option value="">Все категории</option>
                                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
-                        </div>
-
-                        <div className="col-sm">
-                            <select
-                                className="form-select"
-                                value={unitFilter}
-                                onChange={e => { setUnitFilter(e.target.value); setPage(0); }}
-                            >
-                                <option value="">Все единицы</option>
-                                {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                             </select>
                         </div>
 
