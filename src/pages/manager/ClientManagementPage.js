@@ -9,7 +9,7 @@ const ClientManagementPage = () => {
     const [search, setSearch] = useState('');
     const [sortField, setSortField] = useState('');
     const [sortDir, setSortDir] = useState('asc');
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [showFilters, setShowFilters] = useState(false);
     const [emailFilter, setEmailFilter] = useState('');
@@ -23,24 +23,25 @@ const ClientManagementPage = () => {
     const pageSize = 12;
 
     const loadClients = () => {
-        axios.post('/clients/paged', {
-            name: search || undefined,
-            email: emailFilter || undefined,
-            phone: phoneFilter || undefined,
-            address: addressFilter || undefined,
-            page: page - 1,
+        const requestBody = {
+            name: search || null,
+            email: emailFilter || null,
+            phone: phoneFilter || null,
+            address: addressFilter || null,
+            page: page,
             size: pageSize,
-            sortBy: sortField || undefined,
-            sortDirection: sortField ? sortDir : undefined,
-            filters: [],
-        })
+            sortBy: sortField || null,
+            sortDirection: sortField ? sortDir : null,
+            filters: []
+        };
+
+        axios.post('/clients/paged', requestBody)
             .then(res => {
-                setClients(res.data);
-                setTotalPages(Math.ceil(res.data.length / pageSize));
+                setClients(res.data.content || []);
+                setTotalPages(res.data.totalPages || 1);
             })
             .catch(console.error);
     };
-
 
     useEffect(() => {
         const timeout = setTimeout(() => loadClients(), 300);
@@ -54,7 +55,10 @@ const ClientManagementPage = () => {
                     className="form-control mb-3 w-50"
                     placeholder="Поиск (название компании)"
                     value={search}
-                    onChange={e => setSearch(e.target.value)}
+                    onChange={e => {
+                        setSearch(e.target.value);
+                        setPage(0);
+                    }}
                 />
                 <div className="d-flex gap-2">
                     <button
@@ -76,28 +80,40 @@ const ClientManagementPage = () => {
                 <div className="card p-3 mb-3">
                     <div className="row g-3">
                         <div className="col-sm">
-                            <input className="form-control" placeholder="Email"
-                                   value={emailFilter}
-                                   onChange={e => { setEmailFilter(e.target.value); setPage(1); }}/>
+                            <input
+                                className="form-control"
+                                placeholder="Email"
+                                value={emailFilter}
+                                onChange={e => { setEmailFilter(e.target.value); setPage(0); }}
+                            />
                         </div>
                         <div className="col-sm">
-                            <input className="form-control" placeholder="Телефон"
-                                   value={phoneFilter}
-                                   onChange={e => { setPhoneFilter(e.target.value); setPage(1); }}/>
+                            <input
+                                className="form-control"
+                                placeholder="Телефон"
+                                value={phoneFilter}
+                                onChange={e => { setPhoneFilter(e.target.value); setPage(0); }}
+                            />
                         </div>
                         <div className="col-sm">
-                            <input className="form-control" placeholder="Адрес"
-                                   value={addressFilter}
-                                   onChange={e => { setAddressFilter(e.target.value); setPage(1); }}/>
+                            <input
+                                className="form-control"
+                                placeholder="Адрес"
+                                value={addressFilter}
+                                onChange={e => { setAddressFilter(e.target.value); setPage(0); }}
+                            />
                         </div>
                         <div className="col-sm">
-                            <select className="form-select" value={`${sortField}_${sortDir}`}
-                                    onChange={e => {
-                                        const [f, d] = e.target.value.split('_');
-                                        setSortField(f === '_' ? '' : f);
-                                        setSortDir(d);
-                                        setPage(1);
-                                    }}>
+                            <select
+                                className="form-select"
+                                value={`${sortField}_${sortDir}`}
+                                onChange={e => {
+                                    const [f, d] = e.target.value.split('_');
+                                    setSortField(f === '_' ? '' : f);
+                                    setSortDir(d);
+                                    setPage(0);
+                                }}
+                            >
                                 <option value="_">Без сортировки</option>
                                 <option value="companyName_asc">Компания ↑</option>
                                 <option value="companyName_desc">Компания ↓</option>
@@ -115,13 +131,14 @@ const ClientManagementPage = () => {
 
             <div className="row">
                 {clients.map(c => (
-                    <div key={c.id} className="col-sm-6 col-md-4 col-lg-3 mb-4"
+                    <div key={c.id}
+                         className="col-sm-6 col-md-4 col-lg-3 mb-4"
                          onClick={() => { setEditingClientId(c.id); setEditModalOpen(true); }}
-                         style={{cursor: 'pointer'}}>
+                         style={{ cursor: 'pointer' }}>
                         <div className="card h-100 shadow-sm text-center p-3 align-items-center">
                             <div
                                 className="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mb-2"
-                                style={{width: 80, height: 80, fontSize: '1.5rem'}}>
+                                style={{ width: 80, height: 80, fontSize: '1.5rem' }}>
                                 {c.companyName ? c.companyName.charAt(0).toUpperCase() : '?'}
                             </div>
                             <h5>{c.companyName}</h5>
@@ -133,17 +150,22 @@ const ClientManagementPage = () => {
                 ))}
             </div>
 
-            <nav>
-                <ul className="pagination justify-content-center">
-                    {Array.from({length: totalPages}, (_, i) => (
-                        <li key={i} className={`page-item ${page === i + 1 ? 'active' : ''}`}>
-                            <button className="page-link bg-warning text-black" onClick={() => setPage(i + 1)}>
-                                {i + 1}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            </nav>
+            {totalPages > 1 && (
+                <nav>
+                    <ul className="pagination justify-content-center">
+                        {Array.from({ length: totalPages }, (_, i) => (
+                            <li key={i} className={`page-item ${page === i ? 'active' : ''}`}>
+                                <button
+                                    className="page-link bg-warning text-black"
+                                    onClick={() => setPage(i)}
+                                >
+                                    {i + 1}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
+            )}
 
             {createModalOpen && (
                 <ClientCreateModal
@@ -162,6 +184,6 @@ const ClientManagementPage = () => {
             )}
         </div>
     );
-}
+};
 
 export default ClientManagementPage;

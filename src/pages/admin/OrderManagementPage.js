@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import OrderDetailsModalAdmin from "../../components/order/OrderDetailsModalAdmin";
-import UpdateOrderStatusModal from "../../components/order/UpdateOrderStatusModal";
+import UpdateOrderStatusModal from "../../components/order/UpdateOrderModal";
 import CreateOrderModal from "../../components/order/CreateOrderModal";
 import OrderStatusHistoryModal from "../../components/order/OrderStatusHistoryModal";
 
@@ -32,6 +32,7 @@ const OrderManagementPage = () => {
     const [sortBy, setSortBy] = useState("id");
     const [sortDirection, setSortDirection] = useState("asc");
     const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
     const [size] = useState(12);
 
     const fetchOrders = async () => {
@@ -40,33 +41,31 @@ const OrderManagementPage = () => {
                 clientId: filters.clientId ? Number(filters.clientId) : null,
                 statusId: filters.statusId ? Number(filters.statusId) : null,
                 createdById: filters.createdById ? Number(filters.createdById) : null,
-                minTotalPrice: filters.minTotalPrice
-                    ? Number(filters.minTotalPrice)
-                    : null,
-                maxTotalPrice: filters.maxTotalPrice
-                    ? Number(filters.maxTotalPrice)
-                    : null,
+                minTotalPrice: filters.minTotalPrice ? Number(filters.minTotalPrice) : null,
+                maxTotalPrice: filters.maxTotalPrice ? Number(filters.maxTotalPrice) : null,
                 fromDate: filters.fromDate || null,
                 toDate: filters.toDate || null,
                 page,
                 size,
-                sortBy,
-                sortDirection,
+                sortBy: sortBy || null,
+                sortDirection: sortDirection || null,
+                filters: []
             };
 
             const res = await axiosInstance.post("/orders/paged", requestBody);
-            setOrders(res.data || []);
+            setOrders(res.data.content || []);
+            setTotalPages(res.data.totalPages || 1);
         } catch (e) {
-            console.error("Ошибка при загрузке заказов", e);
+            console.error("Ошибка при загрузке заказов:", e);
         }
     };
 
     const fetchStatuses = async () => {
         try {
             const res = await axiosInstance.get("/ref/order-statuses");
-            setStatuses(res.data);
+            setStatuses(res.data || []);
         } catch (e) {
-            console.error("Ошибка при загрузке статусов", e);
+            console.error("Ошибка при загрузке статусов:", e);
         }
     };
 
@@ -76,11 +75,12 @@ const OrderManagementPage = () => {
                 page: 0,
                 size: 100,
                 sortBy: "id",
-                sortDirection: "ASC"
+                sortDirection: "ASC",
+                filters: []
             });
-            setClients(res.data);
+            setClients(res.data.content || []);
         } catch (e) {
-            console.error("Ошибка при загрузке клиентов", e);
+            console.error("Ошибка при загрузке клиентов:", e);
         }
     };
 
@@ -90,15 +90,14 @@ const OrderManagementPage = () => {
                 page: 0,
                 size: 100,
                 sortBy: "id",
-                sortDirection: "ASC"
+                sortDirection: "ASC",
+                filters: []
             });
-            setUsers(res.data);
+            setUsers(res.data.content || []);
         } catch (e) {
-            console.error("Ошибка при загрузке пользователей", e);
+            console.error("Ошибка при загрузке пользователей:", e);
         }
     };
-
-
 
     useEffect(() => {
         fetchStatuses();
@@ -107,9 +106,7 @@ const OrderManagementPage = () => {
     }, []);
 
     useEffect(() => {
-        const timeout = setTimeout(() => {
-            fetchOrders();
-        }, 300);
+        const timeout = setTimeout(fetchOrders, 300);
         return () => clearTimeout(timeout);
     }, [filters, page, sortBy, sortDirection]);
 
@@ -119,7 +116,7 @@ const OrderManagementPage = () => {
             await axiosInstance.delete(`/orders/${id}`);
             fetchOrders();
         } catch (e) {
-            console.error("Ошибка при удалении заказа", e);
+            console.error("Ошибка при удалении заказа:", e);
         }
     };
 
@@ -164,9 +161,10 @@ const OrderManagementPage = () => {
                             <select
                                 className="form-select"
                                 value={filters.clientId}
-                                onChange={(e) =>
-                                    setFilters({ ...filters, clientId: e.target.value })
-                                }
+                                onChange={(e) => {
+                                    setFilters({ ...filters, clientId: e.target.value });
+                                    setPage(0);
+                                }}
                             >
                                 <option value="">Все клиенты</option>
                                 {clients.map((c) => (
@@ -181,9 +179,10 @@ const OrderManagementPage = () => {
                             <select
                                 className="form-select"
                                 value={filters.statusId}
-                                onChange={(e) =>
-                                    setFilters({ ...filters, statusId: e.target.value })
-                                }
+                                onChange={(e) => {
+                                    setFilters({ ...filters, statusId: e.target.value });
+                                    setPage(0);
+                                }}
                             >
                                 <option value="">Все статусы</option>
                                 {statuses.map((s) => (
@@ -198,9 +197,10 @@ const OrderManagementPage = () => {
                             <select
                                 className="form-select"
                                 value={filters.createdById}
-                                onChange={(e) =>
-                                    setFilters({ ...filters, createdById: e.target.value })
-                                }
+                                onChange={(e) => {
+                                    setFilters({ ...filters, createdById: e.target.value });
+                                    setPage(0);
+                                }}
                             >
                                 <option value="">Все создатели</option>
                                 {users.map((u) => (
@@ -264,6 +264,7 @@ const OrderManagementPage = () => {
                                     const [field, dir] = e.target.value.split("_");
                                     setSortBy(field);
                                     setSortDirection(dir);
+                                    setPage(0);
                                 }}
                             >
                                 <option value="id_asc">ID ↑</option>
@@ -318,7 +319,7 @@ const OrderManagementPage = () => {
                                     className="btn btn-warning btn-sm"
                                     onClick={() => handleUpdateStatus(order)}
                                 >
-                                    Изменить статус
+                                    Изменить заказ
                                 </button>
                                 <button
                                     className="btn btn-success btn-sm"
@@ -338,6 +339,23 @@ const OrderManagementPage = () => {
                 ))}
                 </tbody>
             </table>
+
+            {totalPages > 1 && (
+                <nav>
+                    <ul className="pagination justify-content-center">
+                        {Array.from({ length: totalPages }, (_, i) => (
+                            <li key={i} className={`page-item ${page === i ? "active" : ""}`}>
+                                <button
+                                    className="page-link bg-warning text-black"
+                                    onClick={() => setPage(i)}
+                                >
+                                    {i + 1}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
+            )}
 
             {showDetailsModal && selectedOrder && (
                 <OrderDetailsModalAdmin

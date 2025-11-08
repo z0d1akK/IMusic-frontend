@@ -41,7 +41,7 @@ const InventoryMovementPage = () => {
             };
 
             const res = await axiosInstance.post("/products/paged", body);
-            setProducts(res.data);
+            setProducts(res.data.content);
         } catch (e) {
             console.error("Ошибка при загрузке продуктов", e);
         }

@@ -25,7 +25,7 @@ const MovementHistoryModal = ({ show, onHide, product, onEditMovement }) => {
                 sortDirection: "desc"
             };
             const res = await axiosInstance.post("/inventory-movements/paged", body);
-            setMovements(res.data || []);
+            setMovements(res.data.content || []);
         } catch (e) {
             console.error("Ошибка при загрузке истории", e);
             setError("Не удалось загрузить историю движения.");

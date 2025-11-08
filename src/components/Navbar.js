@@ -103,6 +103,9 @@ const Navbar = () => {
                     {roles.includes('ADMIN') && (
                         <>
                             <li className="nav-item">
+                                <Link className="nav-link text-light" to="/admin/statistics">Статистика</Link>
+                            </li>
+                            <li className="nav-item">
                                 <Link className="nav-link text-light" to="/orders/management">Заказы</Link>
                             </li>
                             <li className="nav-item">
@@ -120,7 +123,7 @@ const Navbar = () => {
                     {roles.includes('MANAGER') && (
                         <>
                             <li className="nav-item">
-                                <Link className="nav-link text-light" to="/orders/management">Заказы</Link>
+                            <Link className="nav-link text-light" to="/orders/management">Заказы</Link>
                             </li>
                             <li className="nav-item">
                                 <Link className="nav-link text-light" to="/manager/clients">Клиенты</Link>

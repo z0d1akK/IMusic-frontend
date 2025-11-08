@@ -9,12 +9,9 @@ const DictionariesPage = () => {
         { label: "Роли", value: "roles" },
         { label: "Статусы пользователей", value: "user-statuses" },
         { label: "Статусы заказов", value: "order-statuses" },
-        { label: "Статусы оплаты", value: "payment-statuses"},
-        { label: "Способы оплаты", value: "payment-methods"},
         { label: "Категории продуктов", value: "product-categories" },
         { label: "Единицы измерения", value: "product-units" },
         { label: "Тип передвижения продукта" , value: "inventory-movement-types"},
-        { label: "Тип уведомлений", value: "notification-types"}
     ];
 
     return (

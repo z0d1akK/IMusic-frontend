@@ -35,7 +35,7 @@ export default function ProductManagementPage() {
 
     const load = () => {
         const request = {
-            page: page -1,
+            page: page,
             size: pageSize,
             categoryId: categoryFilter ? Number(categoryFilter) : null,
             minPrice: minPriceFilter ? Number(minPriceFilter) : null,
@@ -50,8 +50,8 @@ export default function ProductManagementPage() {
 
         axios.post('/products/paged', request)
             .then(res => {
-                setProducts(res.data);
-                setTotalPages(Math.ceil(res.data.length / pageSize));
+                setProducts(res.data.content);
+                setTotalPages(res.data.totalPages);
             })
             .catch(console.error);
     };
@@ -83,7 +83,10 @@ export default function ProductManagementPage() {
                     className="form-control w-50"
                     placeholder="Поиск по названию"
                     value={search}
-                    onChange={e => { setSearch(e.target.value); setPage(0); }}
+                    onChange={e => {
+                        setSearch(e.target.value);
+                        setPage(0);
+                    }}
                 />
                 <div className="d-flex gap-2">
                     <button className="btn btn-outline-dark"
@@ -103,7 +106,10 @@ export default function ProductManagementPage() {
                             <select
                                 className="form-select"
                                 value={categoryFilter}
-                                onChange={e => { setCategoryFilter(e.target.value); setPage(0); }}
+                                onChange={e => {
+                                    setCategoryFilter(e.target.value);
+                                    setPage(0);
+                                }}
                             >
                                 <option value="">Все категории</option>
                                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -116,7 +122,10 @@ export default function ProductManagementPage() {
                                 className="form-control"
                                 placeholder="Мин. цена"
                                 value={minPriceFilter}
-                                onChange={e => { setMinPriceFilter(e.target.value); setPage(1); }}
+                                onChange={e => {
+                                    setMinPriceFilter(e.target.value);
+                                    setPage(1);
+                                }}
                                 min="0"
                             />
                         </div>
@@ -127,7 +136,10 @@ export default function ProductManagementPage() {
                                 className="form-control"
                                 placeholder="Макс. цена"
                                 value={maxPriceFilter}
-                                onChange={e => { setMaxPriceFilter(e.target.value); setPage(0); }}
+                                onChange={e => {
+                                    setMaxPriceFilter(e.target.value);
+                                    setPage(0);
+                                }}
                                 min="0"
                             />
                         </div>
@@ -138,7 +150,10 @@ export default function ProductManagementPage() {
                                 className="form-control"
                                 placeholder="Мин. остаток"
                                 value={minStockFilter}
-                                onChange={e => { setMinStockFilter(e.target.value); setPage(0); }}
+                                onChange={e => {
+                                    setMinStockFilter(e.target.value);
+                                    setPage(0);
+                                }}
                                 min="0"
                             />
                         </div>
@@ -149,7 +164,10 @@ export default function ProductManagementPage() {
                                 className="form-control"
                                 placeholder="Макс. остаток"
                                 value={maxStockFilter}
-                                onChange={e => { setMaxStockFilter(e.target.value); setPage(0); }}
+                                onChange={e => {
+                                    setMaxStockFilter(e.target.value);
+                                    setPage(0);
+                                }}
                                 min="0"
                             />
                         </div>
@@ -203,17 +221,19 @@ export default function ProductManagementPage() {
                 ))}
             </div>
 
-            <nav>
-                <ul className="pagination justify-content-center">
-                    {Array.from({length: totalPages}, (_, i) => (
-                        <li key={i} className={`page-item ${page === i ? 'active' : ''}`}>
-                            <button className="page-link bg-warning text-black" onClick={() => setPage(i)}>
-                                {i + 1}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            </nav>
+            {totalPages > 1 && (
+                <nav>
+                    <ul className="pagination justify-content-center">
+                        {Array.from({length: totalPages}, (_, i) => (
+                            <li key={i} className={`page-item ${page === i ? 'active' : ''}`}>
+                                <button className="page-link bg-warning text-black" onClick={() => setPage(i)}>
+                                    {i + 1}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
+            )}
         </div>
     );
 }

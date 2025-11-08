@@ -15,6 +15,12 @@ const CreateOrderModal = ({ show, onHide, clients, onSuccess }) => {
     const [maxPrice, setMaxPrice] = useState("");
     const [categories, setCategories] = useState([]);
 
+    const [deliveryAddress, setDeliveryAddress] = useState("");
+    const [deliveryDate, setDeliveryDate] = useState("");
+    const [comment, setComment] = useState("");
+
+    const [submitError, setSubmitError] = useState("");
+
     useEffect(() => {
         if (show) {
             fetchProducts();
@@ -26,7 +32,7 @@ const CreateOrderModal = ({ show, onHide, clients, onSuccess }) => {
         try {
             const res = await axiosInstance.post("/products/paged", {
                 page: 0,
-                size: 100,
+                size: 1000,
                 name: search || null,
                 categoryId: categoryId ? Number(categoryId) : null,
                 minPrice: minPrice ? Number(minPrice) : null,
@@ -34,7 +40,7 @@ const CreateOrderModal = ({ show, onHide, clients, onSuccess }) => {
                 sortBy: "id",
                 sortDirection: "ASC",
             });
-            setProducts(res.data || []);
+            setProducts(res.data.content || []);
         } catch (e) {
             console.error("Ошибка загрузки продуктов", e);
         }
@@ -62,47 +68,64 @@ const CreateOrderModal = ({ show, onHide, clients, onSuccess }) => {
         });
     };
 
-    const getTotal = () => {
-        return items
+    const getTotal = () =>
+        items
             .reduce((sum, item) => {
                 const product = products.find((p) => p.id === item.productId);
                 return sum + (product?.price || 0) * item.quantity;
             }, 0)
             .toFixed(2);
-    };
 
-    const getQuantity = (productId) => {
-        return items.find((i) => i.productId === productId)?.quantity || 0;
-    };
+    const getQuantity = (productId) =>
+        items.find((i) => i.productId === productId)?.quantity || 0;
 
     const handleSubmit = async () => {
         try {
+            setSubmitError("");
             const filteredItems = items.filter((i) => i.quantity > 0);
             const clientId = Number(selectedClientId);
             const userId = Number(localStorage.getItem("userId"));
+
             if (!clientId || filteredItems.length === 0) {
                 alert("Выберите клиента и добавьте хотя бы один товар");
                 return;
             }
 
-            await axiosInstance.post("/orders", {
+            const orderDto = {
                 clientId,
-                createdById: userId,
-                items: filteredItems,
-            });
+                createdBy: userId,
+                statusId: 1,
+                deliveryAddress,
+                deliveryDate,
+                comment,
+                items: filteredItems.map((i) => ({
+                    productId: i.productId,
+                    quantity: i.quantity,
+                })),
+            };
+
+            await axiosInstance.post("/orders", orderDto);
 
             onHide();
             onSuccess();
         } catch (e) {
             console.error("Ошибка при создании заказа", e);
-            alert("Не удалось создать заказ");
+
+            if (e.response?.data?.message) {
+                setSubmitError(e.response.data.message);
+            } else if (e.response?.data?.error) {
+                setSubmitError(e.response.data.error);
+            } else {
+                setSubmitError("Не удалось создать заказ. Попробуйте позже.");
+            }
         }
     };
 
     const filteredClients = clients.filter((c) => {
         const query = clientSearch.toLowerCase();
+        const name = c.companyName?.toLowerCase() || "";
         return (
-            c.name?.toLowerCase().includes(query) ||
+            name.includes(query) ||
             c.email?.toLowerCase().includes(query) ||
             c.phone?.toLowerCase().includes(query)
         );
@@ -118,7 +141,7 @@ const CreateOrderModal = ({ show, onHide, clients, onSuccess }) => {
                     <Form.Label>Поиск клиента</Form.Label>
                     <Form.Control
                         type="text"
-                        placeholder="Введите имя или телефон клиента"
+                        placeholder="Введите название компании, email или телефон"
                         value={clientSearch}
                         onChange={(e) => setClientSearch(e.target.value)}
                     />
@@ -133,10 +156,42 @@ const CreateOrderModal = ({ show, onHide, clients, onSuccess }) => {
                         <option value="">Выберите клиента</option>
                         {filteredClients.map((c) => (
                             <option key={c.id} value={c.id}>
-                                {c.name} ({c.phone})
+                                {c.companyName || "Без названия"}{" "}
+                                {c.contactPerson ? `— ${c.contactPerson}` : ""}{" "}
+                                ({c.phone || c.email || "нет контакта"})
                             </option>
                         ))}
                     </Form.Select>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                    <Form.Label>Адрес доставки</Form.Label>
+                    <Form.Control
+                        type="text"
+                        value={deliveryAddress}
+                        onChange={(e) => setDeliveryAddress(e.target.value)}
+                        required
+                    />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                    <Form.Label>Дата доставки</Form.Label>
+                    <Form.Control
+                        type="datetime-local"
+                        value={deliveryDate}
+                        onChange={(e) => setDeliveryDate(e.target.value)}
+                        required
+                    />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                    <Form.Label>Комментарий</Form.Label>
+                    <Form.Control
+                        as="textarea"
+                        rows={2}
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                    />
                 </Form.Group>
 
                 <div className="card p-3 mb-3">
@@ -180,6 +235,26 @@ const CreateOrderModal = ({ show, onHide, clients, onSuccess }) => {
                     </div>
                 </div>
 
+                <div className="text-end fw-bold">Общая сумма: {getTotal()} ₽</div>
+
+                {submitError && (
+                    <div className="text-danger text-center w-100 mb-2">{submitError}</div>
+                )}
+
+                <Modal.Footer className="d-flex justify-content-end">
+                    <Button variant="secondary" onClick={onHide}>
+                        Отмена
+                    </Button>
+                    <Button
+                        variant="warning"
+                        onClick={handleSubmit}
+                        disabled={!selectedClientId || items.every((i) => i.quantity <= 0)}
+                        className="ms-2"
+                    >
+                        Создать
+                    </Button>
+                </Modal.Footer>
+
                 <h5>Товары</h5>
                 <Table bordered hover>
                     <thead>
@@ -187,7 +262,7 @@ const CreateOrderModal = ({ show, onHide, clients, onSuccess }) => {
                         <th>Название</th>
                         <th>Цена</th>
                         <th>В наличии</th>
-                        <th>Добавить</th>
+                        <th>Количество</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -210,23 +285,7 @@ const CreateOrderModal = ({ show, onHide, clients, onSuccess }) => {
                     ))}
                     </tbody>
                 </Table>
-
-                <div className="text-end fw-bold">
-                    Общая сумма: {getTotal()} ₽
-                </div>
             </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={onHide}>
-                    Отмена
-                </Button>
-                <Button
-                    variant="warning"
-                    onClick={handleSubmit}
-                    disabled={!selectedClientId || items.every((i) => i.quantity <= 0)}
-                >
-                    Создать
-                </Button>
-            </Modal.Footer>
         </Modal>
     );
 };

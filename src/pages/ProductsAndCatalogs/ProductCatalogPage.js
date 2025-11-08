@@ -32,7 +32,7 @@ export default function ProductCatalogPage() {
 
     const load = () => {
         const request = {
-            page: page -1,
+            page: page,
             size: pageSize,
             categoryId: categoryFilter ? Number(categoryFilter) : null,
             minPrice: minPriceFilter ? Number(minPriceFilter) : null,
@@ -45,8 +45,8 @@ export default function ProductCatalogPage() {
 
         axios.post('/products/paged', request)
             .then(res => {
-                setProducts(res.data);
-                setTotalPages(Math.ceil(res.data.length / pageSize));
+                setProducts(res.data.content);
+                setTotalPages(res.data.totalPages);
             })
             .catch(console.error);
     };
@@ -188,17 +188,19 @@ export default function ProductCatalogPage() {
                 ))}
             </div>
 
-            <nav>
-                <ul className="pagination justify-content-center">
-                    {Array.from({length: totalPages}, (_, i) => (
-                        <li key={i} className={`page-item ${page === i + 1 ? 'active' : ''}`}>
-                            <button className="page-link bg-warning text-black" onClick={() => setPage(i + 1)}>
-                                {i + 1}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            </nav>
+            {totalPages > 1 && (
+                <nav>
+                    <ul className="pagination justify-content-center">
+                        {Array.from({length: totalPages}, (_, i) => (
+                            <li key={i} className={`page-item ${page === i ? 'active' : ''}`}>
+                                <button className="page-link bg-warning text-black" onClick={() => setPage(i)}>
+                                    {i + 1}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
+            )}
         </div>
     );
 }

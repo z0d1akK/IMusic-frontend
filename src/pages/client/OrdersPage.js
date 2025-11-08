@@ -4,62 +4,64 @@ import OrderDetailsModal from "../../components/order/OrderDetailsModal";
 
 const OrdersPage = () => {
     const [orders, setOrders] = useState([]);
-    const [clientId, setClientId] = useState(null);
-    const [hasClientProfile, setHasClientProfile] = useState(null);
+    const [client, setClient] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showModal, setShowModal] = useState(false);
 
     const [page, setPage] = useState(0);
-    const [size, setSize] = useState(20);
+    const [size] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
 
     const userId = localStorage.getItem("userId");
 
     useEffect(() => {
-        if (!userId) {
-            setError("Пользователь не авторизован");
-            setLoading(false);
-            return;
-        }
+        const loadData = async () => {
+            if (!userId) {
+                setError("Пользователь не авторизован");
+                setLoading(false);
+                return;
+            }
 
-        const loadOrders = async () => {
             try {
                 setLoading(true);
+                setError(null);
 
                 const profileRes = await axiosInstance.get("/clients/profile", {
                     suppressGlobalErrorHandler: true,
                 });
-                const client = profileRes.data;
-                if (!client || !client.id) {
-                    setHasClientProfile(false);
+                const clientData = profileRes.data;
+                if (!clientData || !clientData.id) {
+                    setClient(null);
                     setLoading(false);
                     return;
                 }
 
-                setClientId(client.id);
-                setHasClientProfile(true);
+                setClient(clientData);
 
-                const ordersRes = await axiosInstance.post("/orders/paged", {
-                    clientId: client.id,
+                const orderReq = {
+                    clientId: clientData.id,
                     page,
                     size,
                     sortBy: "createdAt",
                     sortDirection: "DESC",
-                });
+                };
 
-                setOrders(ordersRes.data.content || ordersRes.data);
-                setTotalPages(ordersRes.data.totalPages || 1);
-            } catch (e) {
-                console.error(e);
-                setError("Ошибка загрузки заказов");
+                const ordersRes = await axiosInstance.post("/orders/paged", orderReq);
+                const data = ordersRes.data;
+
+                setOrders(data.content || data);
+                setTotalPages(data.totalPages || 1);
+            } catch (err) {
+                console.error("Ошибка при загрузке заказов:", err);
+                setError("Не удалось загрузить заказы. Попробуйте позже.");
             } finally {
                 setLoading(false);
             }
         };
 
-        loadOrders();
+        loadData();
     }, [userId, page, size]);
 
     const openDetails = (order) => {
@@ -72,26 +74,35 @@ const OrdersPage = () => {
         setShowModal(false);
     };
 
-    if (loading) return <div className="text-center mt-5">Загрузка...</div>;
-    if (error) return <div className="alert alert-danger mt-4">{error}</div>;
+    if (loading) {
+        return <div className="text-center mt-5">⏳ Загрузка данных...</div>;
+    }
+
+    if (error) {
+        return <div className="alert alert-danger mt-4">{error}</div>;
+    }
+
+    if (!client) {
+        return (
+            <div className="alert alert-warning mt-4">
+                У вас пока нет профиля клиента. Обратитесь к администратору.
+            </div>
+        );
+    }
 
     return (
         <div className="container mt-4">
             <h2>Мои заказы</h2>
 
-            {hasClientProfile === false ? (
-                <div className="alert alert-warning mt-4">
-                    Ваш профиль клиента ещё не создан. Обратитесь к менеджеру.
-                </div>
-            ) : orders.length === 0 ? (
-                <div className="alert alert-info mt-4">Заказы не найдены</div>
+            {orders.length === 0 ? (
+                <div className="alert alert-info mt-4">Вы ещё не сделали заказов.</div>
             ) : (
                 <>
-                    <table className="table table-hover mt-3">
-                        <thead>
+                    <table className="table table-hover mt-3 align-middle">
+                        <thead className="table-light">
                         <tr>
-                            <th>№ заказа</th>
-                            <th>Дата</th>
+                            <th>№</th>
+                            <th>Дата создания</th>
                             <th>Статус</th>
                             <th>Сумма</th>
                             <th>Действия</th>
@@ -101,8 +112,8 @@ const OrdersPage = () => {
                         {orders.map((order) => (
                             <tr key={order.id}>
                                 <td>{order.id}</td>
-                                <td>{new Date(order.createdAt).toLocaleString()}</td>
-                                <td>{order.statusName || order.statusId}</td>
+                                <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                                <td>{order.statusName || "—"}</td>
                                 <td>{order.totalPrice?.toFixed(2)} ₽</td>
                                 <td>
                                     <button
@@ -142,7 +153,10 @@ const OrdersPage = () => {
             )}
 
             {showModal && selectedOrder && (
-                <OrderDetailsModal orderId={selectedOrder.id} onClose={closeModal} />
+                <OrderDetailsModal
+                    orderId={selectedOrder.id}
+                    onClose={closeModal}
+                />
             )}
         </div>
     );

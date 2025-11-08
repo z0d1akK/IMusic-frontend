@@ -36,7 +36,7 @@ const DictionaryTable = ({ dictionaryType }) => {
                 size,
                 sortBy: sortField || null,
                 sortDirection: sortDir || null,
-                filters: [] // запас под будущие расширенные фильтры
+                filters: []
             };
 
             const response = await axios.post(`/ref/${dictionaryType}/filter`, requestBody);

@@ -130,13 +130,13 @@ const CartPage = () => {
             const orderDto = {
                 clientId,
                 createdBy: parseInt(userId),
-                statusId: 1, // например, "новый"
+                statusId: 1,
                 deliveryAddress,
                 deliveryDate,
                 comment,
                 items: cartItems.map(item => ({
                     productId: item.productId,
-                    orderId: null, // создаётся автоматически на сервере
+                    orderId: null,
                     quantity: tempQuantities[item.id] ?? item.quantity,
                     unitPrice: item.productPrice
                 }))
@@ -254,7 +254,6 @@ const CartPage = () => {
                 </>
             )}
 
-            {/* Модальное окно подтверждения */}
             <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
                 <Modal.Header closeButton>
                     <Modal.Title>Подтверждение заказа</Modal.Title>
@@ -294,7 +293,7 @@ const CartPage = () => {
                     <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
                         Отмена
                     </Button>
-                    <Button variant="primary" onClick={handleConfirmOrder}>
+                    <Button variant="warning" onClick={handleConfirmOrder}>
                         Подтвердить заказ
                     </Button>
                 </Modal.Footer>

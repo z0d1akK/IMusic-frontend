@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getBasePath } from "../../utils/basePath";
+import {getImageUrl} from "../../utils/image";
 import axios from '../../api/axiosInstance';
 
 export default function ProductFormPage() {
@@ -99,12 +100,6 @@ export default function ProductFormPage() {
         setPreviewUrl(url);
         return () => URL.revokeObjectURL(url);
     }, [imageFile]);
-
-    const getImageUrl = (path) => {
-        if (!path) return '/uploads/products/default.webp';
-        if (path.startsWith('http') || path.startsWith('/uploads/')) return path;
-        return `/uploads/${path.replace(/^\/+/g, '')}`;
-    };
 
     const handleSave = async () => {
         const trimmedName = name.trim();
