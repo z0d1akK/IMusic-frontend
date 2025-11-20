@@ -1,5 +1,5 @@
 import React from "react";
-import {BrowserRouter as Router, Routes, Route, Navigate} from "react-router-dom";
+import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./utils/ProtectedRoute";
@@ -13,7 +13,6 @@ import EditProfilePage from "./pages/EditProfilePage";
 
 import AdminPage from "./pages/main/AdminHome";
 import ManagerPage from "./pages/main/ManagerHome";
-import ClientPage from "./pages/main/ClientHome";
 import HomePage from "./pages/main/PublicHome";
 
 import DictionaryManagementPage from "./pages/admin/DictionaryManagementPage";
@@ -25,12 +24,18 @@ import ProductFormPage from "./pages/admin/ProductFormPage";
 import CategoryAttributePage from "./pages/admin/CategoryAttributePage";
 import InventoryMovementPage from "./pages/admin/InventoryMovementPage";
 import OrderManagementPage from "./pages/admin/OrderManagementPage";
+import SalesDetails from "./pages/admin/statistics/SalesDetails";
+import OrdersDetails from "./pages/admin/statistics/OrdersDetails";
+import ProductsDetails from "./pages/admin/statistics/ProductsDetails";
+import ManagerDetails from "./pages/admin/statistics/ManagerDetails";
 
+import ManagerProductsDetails from "./pages/manager/statistics/ManagerProductsDetails";
+import ManagerSalesDetails from "./pages/manager/statistics/ManagerSalesDetails";
+import ManagerClientsDetails from "./pages/manager/statistics/ManagerClientsDetails";
 
 import ClientProfilePage from "./pages/client/ClientProfilePage";
 import CartPage from "./pages/client/CartPage";
 import OrdersPage from "./pages/client/OrdersPage";
-
 
 import ProductDetailPage from "./pages/ProductsAndCatalogs/ProductDetailPage";
 import ProductCatalogPage from "./pages/ProductsAndCatalogs/ProductCatalogPage";
@@ -40,7 +45,7 @@ function App() {
     return (
         <Router>
             <div className="d-flex flex-column min-vh-100">
-                <Navbar />
+                <Navbar/>
                 <div className="flex-grow-1">
                     <Routes>
                         <Route path="/" element={<HomePage/>}/>
@@ -61,13 +66,13 @@ function App() {
                             path="/client/profile"
                             element={
                                 <ProtectedRoute allowedRoles={['CLIENT']}>
-                                    <ClientProfilePage />
+                                    <ClientProfilePage/>
                                 </ProtectedRoute>
                             }
                         />
 
-                        <Route path="/catalog" element={<ProductCatalogPage />} />
-                        <Route path="/catalog/:id" element={<ProductDetailPage />} />
+                        <Route path="/catalog" element={<ProductCatalogPage/>}/>
+                        <Route path="/catalog/:id" element={<ProductDetailPage/>}/>
 
                         <Route
                             path="/admin"
@@ -81,7 +86,7 @@ function App() {
                             path="/admin/dictionaries"
                             element={
                                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                                    <DictionaryManagementPage />
+                                    <DictionaryManagementPage/>
                                 </ProtectedRoute>
                             }
                         />
@@ -89,13 +94,13 @@ function App() {
                             path="/admin/users"
                             element={
                                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                                    <UserManagementPage />
+                                    <UserManagementPage/>
                                 </ProtectedRoute>
                             }
                         />
                         <Route path="/admin/users/:id" element={
                             <ProtectedRoute allowedRoles={['ADMIN']}>
-                                <UserEditPage />
+                                <UserEditPage/>
                             </ProtectedRoute>
                         }
                         />
@@ -103,7 +108,7 @@ function App() {
                             path="/admin/clients"
                             element={
                                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                                    <ClientManagementPage />
+                                    <ClientManagementPage/>
                                 </ProtectedRoute>
                             }
                         />
@@ -111,7 +116,7 @@ function App() {
                             path="/admin/product-attributes"
                             element={
                                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                                    <CategoryAttributePage />
+                                    <CategoryAttributePage/>
                                 </ProtectedRoute>
                             }
                         />
@@ -119,7 +124,7 @@ function App() {
                             path="/admin/products"
                             element={
                                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                                    <ProductManagementPage />
+                                    <ProductManagementPage/>
                                 </ProtectedRoute>
                             }
                         />
@@ -127,7 +132,7 @@ function App() {
                             path="/admin/products/:id"
                             element={
                                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                                    <ProductFormPage />
+                                    <ProductFormPage/>
                                 </ProtectedRoute>
                             }
                         />
@@ -135,15 +140,15 @@ function App() {
                             path="/admin/products/create"
                             element={
                                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                                    <ProductFormPage />
+                                    <ProductFormPage/>
                                 </ProtectedRoute>
                             }
                         />
                         <Route
                             path="/orders/management"
                             element={
-                                <ProtectedRoute allowedRoles={['ADMIN','MANAGER']}>
-                                    <OrderManagementPage />
+                                <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                                    <OrderManagementPage/>
                                 </ProtectedRoute>
                             }
                         />
@@ -151,7 +156,39 @@ function App() {
                             path="/admin/inventory-movement"
                             element={
                                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                                    <InventoryMovementPage />
+                                    <InventoryMovementPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/statistics/sales"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <SalesDetails/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/statistics/orders"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <OrdersDetails/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/statistics/products"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <ProductsDetails/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/statistics/managers"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <ManagerDetails/>
                                 </ProtectedRoute>
                             }
                         />
@@ -168,7 +205,7 @@ function App() {
                             path="/manager/clients"
                             element={
                                 <ProtectedRoute allowedRoles={['MANAGER']}>
-                                    <ClientManagementPage />
+                                    <ClientManagementPage/>
                                 </ProtectedRoute>
                             }
                         />
@@ -176,7 +213,7 @@ function App() {
                             path="/manager/product-attributes"
                             element={
                                 <ProtectedRoute allowedRoles={['MANAGER']}>
-                                    <CategoryAttributePage />
+                                    <CategoryAttributePage/>
                                 </ProtectedRoute>
                             }
                         />
@@ -184,7 +221,7 @@ function App() {
                             path="/manager/products"
                             element={
                                 <ProtectedRoute allowedRoles={['MANAGER']}>
-                                    <ProductManagementPage />
+                                    <ProductManagementPage/>
                                 </ProtectedRoute>
                             }
                         />
@@ -192,7 +229,7 @@ function App() {
                             path="/manager/products/:id"
                             element={
                                 <ProtectedRoute allowedRoles={['MANAGER']}>
-                                    <ProductFormPage />
+                                    <ProductFormPage/>
                                 </ProtectedRoute>
                             }
                         />
@@ -200,7 +237,7 @@ function App() {
                             path="/manager/products/create"
                             element={
                                 <ProtectedRoute allowedRoles={['MANAGER']}>
-                                    <ProductFormPage />
+                                    <ProductFormPage/>
                                 </ProtectedRoute>
                             }
                         />
@@ -208,24 +245,40 @@ function App() {
                             path="/manager/inventory-movement"
                             element={
                                 <ProtectedRoute allowedRoles={['MANAGER']}>
-                                    <InventoryMovementPage />
+                                    <InventoryMovementPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/manager/statistics/sales"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <ManagerSalesDetails/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/manager/statistics/clients"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <ManagerClientsDetails/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/manager/statistics/products"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <ManagerProductsDetails/>
                                 </ProtectedRoute>
                             }
                         />
 
                         <Route
-                            path="/client"
-                            element={
-                                <ProtectedRoute allowedRoles={["CLIENT"]}>
-                                    <ClientPage/>
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
                             path="/client/cart"
                             element={
                                 <ProtectedRoute allowedRoles={['CLIENT']}>
-                                    <CartPage />
+                                    <CartPage/>
                                 </ProtectedRoute>
                             }
                         />
@@ -233,7 +286,7 @@ function App() {
                             path="/client/orders"
                             element={
                                 <ProtectedRoute allowedRoles={['CLIENT']}>
-                                    <OrdersPage />
+                                    <OrdersPage/>
                                 </ProtectedRoute>
                             }
                         />

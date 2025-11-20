@@ -30,7 +30,6 @@ const RegisterPage = () => {
 
             if (roles.includes('ADMIN')) navigate('/admin');
             else if (roles.includes('MANAGER')) navigate('/manager');
-            else if (roles.includes('CLIENT')) navigate('/client');
             else navigate('/');
         } catch (err) {
             const msg = err.response?.data?.message || 'Ошибка регистрации';

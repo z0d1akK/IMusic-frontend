@@ -75,7 +75,7 @@ const OrdersPage = () => {
     };
 
     if (loading) {
-        return <div className="text-center mt-5">⏳ Загрузка данных...</div>;
+        return <div className="text-center mt-5">Загрузка данных...</div>;
     }
 
     if (error) {
@@ -85,7 +85,7 @@ const OrdersPage = () => {
     if (!client) {
         return (
             <div className="alert alert-warning mt-4">
-                У вас пока нет профиля клиента. Обратитесь к администратору.
+                У вас пока нет профиля клиента. Обратитесь к менеджеру.
             </div>
         );
     }

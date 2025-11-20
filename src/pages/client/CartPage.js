@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { getImageUrl } from "../../utils/image";
-import axios from '../../api/axiosInstance';
+import axios from "../../api/axiosInstance";
 import { Modal, Button, Form } from "react-bootstrap";
+import "../../styles/custom.css"
 
 const CartPage = () => {
     const navigate = useNavigate();
@@ -11,7 +12,6 @@ const CartPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [totalPrice, setTotalPrice] = useState(0);
-    const [hasClientProfile, setHasClientProfile] = useState(null);
     const [tempQuantities, setTempQuantities] = useState({});
     const debounceTimers = useRef({});
 
@@ -29,10 +29,9 @@ const CartPage = () => {
             return;
         }
 
-        axios.get('/clients/profile', { suppressGlobalErrorHandler: true })
+        axios.get("/clients/profile", { suppressGlobalErrorHandler: true })
             .then(res => {
                 const clientId = res.data.id;
-                setHasClientProfile(true);
                 return axios.get(`/cart/${clientId}`);
             })
             .then(res => {
@@ -49,56 +48,43 @@ const CartPage = () => {
                 });
                 setTempQuantities(initialQuantities);
             })
-            .catch(err => {
-                console.error(err);
-                setError("Ошибка загрузки корзины");
-            })
+            .catch(() => setError("Ошибка загрузки корзины"))
             .finally(() => setLoading(false));
     }, []);
 
     const calculateTotal = (items) => {
-        const total = items.reduce((sum, item) => {
-            const price = item.productPrice ?? 0;
-            return sum + price * item.quantity;
-        }, 0);
+        const total = items.reduce((sum, item) => sum + (item.productPrice ?? 0) * item.quantity, 0);
         setTotalPrice(total);
     };
 
-    const handleQuantityInputChange = (itemId, productStockQty, value) => {
+    const handleQuantityInputChange = (itemId, stock, value) => {
         setTempQuantities(prev => ({ ...prev, [itemId]: value }));
         const quantity = parseInt(value);
         if (isNaN(quantity) || quantity < 1) return;
-
-        if (quantity > productStockQty) {
-            alert(`На складе доступно только ${productStockQty} шт.`);
-            setTempQuantities(prev => ({ ...prev, [itemId]: productStockQty }));
+        if (quantity > stock) {
+            alert(`На складе доступно только ${stock} шт.`);
+            setTempQuantities(prev => ({ ...prev, [itemId]: stock }));
             return;
         }
-        if (debounceTimers.current[itemId]) {
-            clearTimeout(debounceTimers.current[itemId]);
-        }
-        debounceTimers.current[itemId] = setTimeout(() => {
-            updateQuantityOnServer(itemId, quantity);
-        }, 800);
-    };
 
-    const updateQuantityOnServer = (itemId, quantity) => {
-        axios.put(`/cart/items/${itemId}`, null, { params: { quantity } })
-            .then(res => {
-                const updatedItems = cartItems.map(item => item.id === itemId ? res.data : item);
-                setCartItems(updatedItems);
-                calculateTotal(updatedItems);
-                setTempQuantities(prev => ({ ...prev, [itemId]: res.data.quantity }));
-            })
-            .catch(() => alert("Ошибка при обновлении количества"));
+        if (debounceTimers.current[itemId]) clearTimeout(debounceTimers.current[itemId]);
+        debounceTimers.current[itemId] = setTimeout(() => {
+            axios.put(`/cart/items/${itemId}`, null, { params: { quantity } })
+                .then(res => {
+                    const updatedItems = cartItems.map(item => item.id === itemId ? res.data : item);
+                    setCartItems(updatedItems);
+                    calculateTotal(updatedItems);
+                })
+                .catch(() => alert("Ошибка при обновлении количества"));
+        }, 800);
     };
 
     const handleRemove = (itemId) => {
         axios.delete(`/cart/items/${itemId}`)
             .then(() => {
-                const updatedItems = cartItems.filter(item => item.id !== itemId);
-                setCartItems(updatedItems);
-                calculateTotal(updatedItems);
+                const updated = cartItems.filter(i => i.id !== itemId);
+                setCartItems(updated);
+                calculateTotal(updated);
             })
             .catch(() => alert("Не удалось удалить товар"));
     };
@@ -108,7 +94,6 @@ const CartPage = () => {
             .then(() => {
                 setCartItems([]);
                 setTotalPrice(0);
-                setTempQuantities({});
             })
             .catch(() => alert("Ошибка при очистке корзины"));
     };
@@ -124,7 +109,7 @@ const CartPage = () => {
     const handleConfirmOrder = async () => {
         try {
             setLoading(true);
-            const profileRes = await axios.get('/clients/profile');
+            const profileRes = await axios.get("/clients/profile");
             const clientId = profileRes.data.id;
 
             const orderDto = {
@@ -142,14 +127,12 @@ const CartPage = () => {
                 }))
             };
 
-            const createRes = await axios.post('/orders', orderDto);
-
-            alert(`Заказ #${createRes.data.id} успешно создан!`);
+            const res = await axios.post("/orders", orderDto);
+            alert(`Заказ #${res.data.id} успешно создан!`);
             await axios.delete(`/cart/${cartId}/items`);
             setCartItems([]);
             setTotalPrice(0);
             setShowConfirmModal(false);
-
             navigate("/client/orders");
         } catch (err) {
             console.error(err);
@@ -163,17 +146,17 @@ const CartPage = () => {
     if (error) return <div className="alert alert-danger mt-4">{error}</div>;
 
     return (
-        <div className="container mt-4">
-            <h2 className="mb-4">Ваша корзина</h2>
+        <div className="container mt-4 cart-container">
+            <h2 className="mb-4 text-center text-md-start">Ваша корзина</h2>
 
             {cartItems.length === 0 ? (
-                <div className="alert alert-info">
+                <div className="alert alert-info text-center">
                     Корзина пуста. <Link to="/catalog" className="alert-link">Добавьте товары из каталога</Link>.
                 </div>
             ) : (
                 <>
-                    <div className="table-responsive">
-                        <table className="table">
+                    <div className="d-none d-md-block table-responsive">
+                        <table className="table align-middle">
                             <thead>
                             <tr>
                                 <th>Товар</th>
@@ -185,22 +168,14 @@ const CartPage = () => {
                             <tbody>
                             {cartItems.map(item => (
                                 <tr key={item.id}>
-                                    <td style={{ maxWidth: '300px' }}>
-                                        <div
-                                            className="d-flex align-items-center"
-                                            style={{ cursor: 'pointer' }}
-                                            onClick={() => navigate(`/catalog/${item.productId}`)}
-                                        >
+                                    <td>
+                                        <div className="d-flex align-items-center"
+                                             onClick={() => navigate(`/catalog/${item.productId}`)}
+                                             style={{ cursor: "pointer" }}>
                                             <img
                                                 src={getImageUrl(item.productImagePath)}
                                                 alt={item.productName}
-                                                style={{
-                                                    width: 60,
-                                                    height: 60,
-                                                    objectFit: 'cover',
-                                                    marginRight: 12,
-                                                    borderRadius: 4
-                                                }}
+                                                className="cart-item-image"
                                             />
                                             <span>{item.productName}</span>
                                         </div>
@@ -210,12 +185,9 @@ const CartPage = () => {
                                             type="number"
                                             className="form-control"
                                             value={tempQuantities[item.id] ?? item.quantity}
+                                            min={1}
                                             onChange={(e) =>
-                                                handleQuantityInputChange(
-                                                    item.id,
-                                                    item.productStockQuantity ?? 0,
-                                                    e.target.value
-                                                )
+                                                handleQuantityInputChange(item.id, item.productStockQuantity ?? 0, e.target.value)
                                             }
                                         />
                                     </td>
@@ -231,19 +203,55 @@ const CartPage = () => {
                         </table>
                     </div>
 
-                    <div className="d-flex justify-content-between align-items-center mt-2">
-                        <div>
-                            <button className="btn btn-secondary me-2" onClick={() => navigate("/catalog")}>
+                    <div className="d-md-none">
+                        {cartItems.map(item => (
+                            <div key={item.id} className="cart-card mb-3 p-3 shadow-sm rounded">
+                                <div className="d-flex align-items-center mb-2">
+                                    <img
+                                        src={getImageUrl(item.productImagePath)}
+                                        alt={item.productName}
+                                        className="cart-item-image me-3"
+                                    />
+                                    <div className="flex-grow-1">
+                                        <h6 className="mb-1">{item.productName}</h6>
+                                        <small className="text-muted">{item.productPrice} ₽/шт</small>
+                                    </div>
+                                    <button
+                                        className="btn btn-outline-danger btn-sm"
+                                        onClick={() => handleRemove(item.id)}
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <input
+                                        type="number"
+                                        className="form-control w-25"
+                                        min={1}
+                                        value={tempQuantities[item.id] ?? item.quantity}
+                                        onChange={(e) =>
+                                            handleQuantityInputChange(item.id, item.productStockQuantity ?? 0, e.target.value)
+                                        }
+                                    />
+                                    <strong>{((item.productPrice ?? 0) * (tempQuantities[item.id] ?? item.quantity)).toFixed(2)} ₽</strong>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="cart-footer mt-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                        <div className="text-center text-md-start">
+                            <button className="btn btn-secondary me-2 mb-2" onClick={() => navigate("/catalog")}>
                                 Вернуться в каталог
                             </button>
                             <button className="btn btn-outline-danger" onClick={handleClearCart}>
                                 Очистить корзину
                             </button>
                         </div>
-                        <div className="text-end">
-                            <h5>Сумма: {totalPrice.toFixed(2)} ₽</h5>
+                        <div className="text-center text-md-end">
+                            <h5 className="mb-2">Сумма: {totalPrice.toFixed(2)} ₽</h5>
                             <button
-                                className="btn btn-warning"
+                                className="btn btn-warning mb-2"
                                 onClick={handleCreateOrder}
                                 disabled={cartItems.length === 0 || loading}
                             >
@@ -254,6 +262,7 @@ const CartPage = () => {
                 </>
             )}
 
+            {/* Модалка */}
             <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
                 <Modal.Header closeButton>
                     <Modal.Title>Подтверждение заказа</Modal.Title>
