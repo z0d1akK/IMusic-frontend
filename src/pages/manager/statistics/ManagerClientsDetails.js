@@ -34,7 +34,9 @@ const ManagerClientsDetails = () => {
 
             params.append("limit", 10);
 
-            const res = await axios.get(`/statistics/manager/${managerId}/top-clients?${params}`);
+            const res = await axios.get(
+                `/statistics/manager/${managerId}/top-clients?${params}`
+            );
 
             setTopClients(res.data);
         } finally {
@@ -44,7 +46,7 @@ const ManagerClientsDetails = () => {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [filters]);
 
     return (
         <div className="p-4">
@@ -62,13 +64,36 @@ const ManagerClientsDetails = () => {
                 <Card>
                     <Card.Body style={{ height: "400px" }}>
                         <ResponsiveContainer>
-                            <BarChart data={topClients}>
-                                <XAxis dataKey="clientName" />
+                            <BarChart
+                                data={topClients.map(c => ({
+                                    ...c,
+                                    clientName: c.clientName?.length > 15
+                                        ? c.clientName.slice(0, 15) + "..."
+                                        : c.clientName
+                                }))}
+                                margin={{ top: 20, right: 20, left: 10, bottom: 50 }}
+                                barCategoryGap="20%"
+                            >
+                                <XAxis
+                                    dataKey="clientName"
+                                    angle={-15}
+                                    textAnchor="end"
+                                    interval={0}
+                                    height={60}
+                                />
                                 <YAxis />
-                                <Tooltip />
-                                <Bar dataKey="totalRevenue" fill="#0d6efd" />
+                                <Tooltip
+                                    formatter={(value) => `${value} ₽`}
+                                    labelFormatter={(label) => `Клиент: ${label}`}
+                                />
+                                <Bar
+                                    dataKey="totalSpent"
+                                    fill="#198754"
+                                    maxBarSize={40}
+                                />
                             </BarChart>
                         </ResponsiveContainer>
+
                     </Card.Body>
                 </Card>
             )}

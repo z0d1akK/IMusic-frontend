@@ -13,14 +13,23 @@ const ManagerProductsDetails = () => {
     const [filters, setFilters] = useState({
         startDate: "",
         endDate: "",
-        managerId: managerId
+        managerId
     });
 
     const loadData = async () => {
         setLoading(true);
         try {
-            const params = new URLSearchParams(filters);
-            const res = await axios.get(`/statistics/top-products?limit=10&${params}`);
+            const params = new URLSearchParams();
+
+            if (filters.startDate) params.append("startDate", filters.startDate);
+            if (filters.endDate) params.append("endDate", filters.endDate);
+
+            params.append("limit", 10);
+
+            const res = await axios.get(
+                `/statistics/manager/${managerId}/top-products?${params}`
+            );
+
             setTopProducts(res.data);
         } finally {
             setLoading(false);
@@ -29,7 +38,7 @@ const ManagerProductsDetails = () => {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [filters]);
 
     return (
         <div className="p-4">

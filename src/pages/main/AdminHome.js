@@ -6,8 +6,10 @@ import {
     LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer
 } from "recharts";
 import { useNavigate } from "react-router-dom";
+import ReportModal from "../../components/reports/ReportModal";
 
 const AdminHome = () => {
+    const [showReport, setShowReport] = useState(false);
     const [overview, setOverview] = useState(null);
     const [salesTrend, setSalesTrend] = useState([]);
     const [orderStatus, setOrderStatus] = useState([]);
@@ -60,7 +62,12 @@ const AdminHome = () => {
 
     return (
         <div className="p-4">
-            <h2 className="mb-4 fw-bold">Панель администратора</h2>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h2 className="fw-bold">Панель администратора</h2>
+                <Button variant="warning" onClick={() => setShowReport(true)}>
+                    Сформировать отчёт
+                </Button>
+            </div>
             {loading && <p>Загрузка...</p>}
             <Row className="mb-4">
                 <Col lg={3} sm={6} className="mb-3">
@@ -166,6 +173,13 @@ const AdminHome = () => {
                     </Card>
                 </Col>
             </Row>
+
+            <ReportModal
+                show={showReport}
+                onClose={() => setShowReport(false)}
+                role="ADMIN"
+            />
+
         </div>
     );
 };

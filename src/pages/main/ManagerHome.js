@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
-import { Card, Col, Row } from "react-bootstrap";
+import {Button, Card, Col, Row} from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import {
     LineChart, Line,
@@ -8,6 +8,7 @@ import {
     XAxis, YAxis, Tooltip,
     ResponsiveContainer
 } from "recharts";
+import ReportModal from "../../components/reports/ReportModal";
 
 const normalizeDate = (date) => {
     if (!date) return null;
@@ -18,6 +19,7 @@ const ManagerHome = () => {
     const navigate = useNavigate();
     const managerId = localStorage.getItem("userId");
 
+    const [showReport, setShowReport] = useState(false);
     const [overview, setOverview] = useState(null);
     const [salesTrends, setSalesTrends] = useState([]);
     const [topClients, setTopClients] = useState([]);
@@ -52,7 +54,7 @@ const ManagerHome = () => {
                 axiosInstance.get("/statistics/overview"),
                 axiosInstance.get(`/statistics/manager/${managerId}/sales-trends`, { params }),
                 axiosInstance.get(`/statistics/manager/${managerId}/top-clients?limit=5`),
-                axiosInstance.get(`/statistics/manager/${managerId}/top-products?limit=5`),
+                axiosInstance.get(`/statistics/manager/${managerId}/top-products`, { params }),
             ]);
 
             setOverview(overviewRes.data);
@@ -75,9 +77,13 @@ const ManagerHome = () => {
 
     return (
         <div className="p-4">
-            <h2 className="mb-4 fw-bold">Панель менеджера</h2>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h2 className="fw-bold">Панель менеджера</h2>
+                <Button variant="warning" onClick={() => setShowReport(true)}>
+                    Сформировать отчёт
+                </Button>
+            </div>
             {loading && <p>Загрузка...</p>}
-
             <Row className="mb-4">
                 <Col lg={3} sm={6} className="mb-3">
                     <Card><Card.Body>
@@ -115,12 +121,12 @@ const ManagerHome = () => {
                           onClick={() => navigate("/manager/statistics/sales")}>
                         <h5 className="mb-3">Тренды продаж (мои)</h5>
 
-                        <div style={{ height: "300px" }}>
+                        <div style={{height: "300px"}}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={salesTrends}>
-                                    <XAxis dataKey="period" />
-                                    <YAxis />
-                                    <Tooltip />
+                                    <XAxis dataKey="period"/>
+                                    <YAxis/>
+                                    <Tooltip/>
                                     <Line
                                         type="monotone"
                                         dataKey="totalRevenue"
@@ -138,13 +144,13 @@ const ManagerHome = () => {
                           onClick={() => navigate("/manager/statistics/clients")}>
                         <h5 className="mb-3">Мои топ клиенты</h5>
 
-                        <div style={{ height: "250px" }}>
+                        <div style={{height: "250px"}}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={topClients}>
-                                    <XAxis dataKey="clientName" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Bar dataKey="totalRevenue" fill="#198754" />
+                                    <XAxis dataKey="clientName"/>
+                                    <YAxis/>
+                                    <Tooltip/>
+                                    <Bar dataKey="totalSpent" fill="#198754"/>
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -156,20 +162,26 @@ const ManagerHome = () => {
                           onClick={() => navigate("/manager/statistics/products")}>
                         <h5 className="mb-3">Мои топ продукты</h5>
 
-                        <div style={{ height: "250px" }}>
+                        <div style={{height: "250px"}}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={topProducts}>
-                                    <XAxis dataKey="productName" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Bar dataKey="totalSold" fill="#6610f2" />
+                                    <XAxis dataKey="productName"/>
+                                    <YAxis/>
+                                    <Tooltip/>
+                                    <Bar dataKey="totalSold" fill="#6610f2"/>
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </Card>
                 </Col>
-
             </Row>
+
+            <ReportModal
+                show={showReport}
+                onClose={() => setShowReport(false)}
+                role="MANAGER"
+                managerId={managerId}
+            />
         </div>
     );
 };

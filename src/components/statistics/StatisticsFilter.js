@@ -1,34 +1,50 @@
-import React from "react";
-import { Form, Button, Row, Col } from "react-bootstrap";
+import React, { useRef } from "react";
+import { Form, Row, Col } from "react-bootstrap";
 
-const StatisticsFilter = ({ filters, onChange, onApply }) => {
+const StatisticsFilter = ({ filters, onChange }) => {
+    const debounceRef = useRef(null);
+
+    const handleChange = (updated) => {
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+
+        debounceRef.current = setTimeout(() => {
+            onChange(updated);
+        }, 100);
+    };
+
     return (
-        <Form className="mb-4">
-            <Row className="align-items-end g-3">
-                <Col xs={12} sm={6} md={3}>
-                    <Form.Group controlId="startDate">
+        <Form className="mb-3 w-100">
+            <Row className="g-3 w-100">
+                <Col xs={12} md={6}>
+                    <Form.Group controlId="startDate" className="w-100">
                         <Form.Label>Дата начала</Form.Label>
                         <Form.Control
                             type="date"
+                            className="w-100"
                             value={filters.startDate}
-                            onChange={(e) => onChange({ ...filters, startDate: e.target.value })}
+                            onChange={(e) => handleChange({
+                                ...filters,
+                                startDate: e.target.value
+                            })}
                         />
                     </Form.Group>
                 </Col>
 
-                <Col xs={12} sm={6} md={3}>
-                    <Form.Group controlId="endDate">
+                <Col xs={12} md={6}>
+                    <Form.Group controlId="endDate" className="w-100">
                         <Form.Label>Дата окончания</Form.Label>
                         <Form.Control
                             type="date"
+                            className="w-100"
                             value={filters.endDate}
-                            onChange={(e) => onChange({ ...filters, endDate: e.target.value })}
+                            onChange={(e) => handleChange({
+                                ...filters,
+                                endDate: e.target.value
+                            })}
                         />
                     </Form.Group>
-                </Col>
-
-                <Col xs={12} sm={6} md="auto">
-                    <Button variant="warning" onClick={onApply}>Применить</Button>
                 </Col>
             </Row>
         </Form>

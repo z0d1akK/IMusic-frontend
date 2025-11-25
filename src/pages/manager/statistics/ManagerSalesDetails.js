@@ -28,7 +28,7 @@ const ManagerSalesDetails = () => {
 
     useEffect(() => {
         loadSales();
-    }, []);
+    }, [filters]);
 
     return (
         <div className="p-4">
