@@ -5,15 +5,16 @@ import axiosInstance from "../../api/axiosInstance";
 import { downloadReport } from "../../utils/reportDownload";
 
 const ReportModal = ({ show, onClose, role, managerId }) => {
-    const initialFilters = {
-        startDate: "",
-        endDate: "",
-        managerId: managerId || ""
-    };
 
-    const [filters, setFilters] = useState(initialFilters);
     const [reportType, setReportType] = useState("");
     const [loading, setLoading] = useState(false);
+
+    const [filters, setFilters] = useState({
+        startDate: "",
+        endDate: "",
+        groupBy: "month",
+        managerId: managerId || ""
+    });
 
     const [managers, setManagers] = useState([]);
     const [managerSearch, setManagerSearch] = useState("");
@@ -26,8 +27,13 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
     }, [show]);
 
     const resetForm = () => {
-        setFilters(initialFilters);
         setReportType("");
+        setFilters({
+            startDate: "",
+            endDate: "",
+            groupBy: "month",
+            managerId: managerId || ""
+        });
         setManagerSearch("");
         setLoading(false);
     };
@@ -41,6 +47,7 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
                 sortBy: "fullName",
                 sortDirection: "ASC"
             });
+
             setManagers(res.data.content || []);
         } catch (e) {
             console.error("Ошибка загрузки менеджеров", e);
@@ -51,57 +58,61 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
         m.fullName?.toLowerCase().includes(managerSearch.toLowerCase())
     );
 
+    const requireDates = ["admin_sales", "manager_sales", "manager_top_clients", "manager_top_products"];
+    const requireManager = ["manager_sales", "manager_top_clients", "manager_top_products"];
+    const allowGroupBy = ["admin_sales", "manager_sales"];
+
     const onGenerate = async () => {
+
         if (!reportType) return alert("Выберите тип отчёта!");
 
-        const { startDate, endDate, managerId } = filters;
+        if (requireDates.includes(reportType)) {
+            if (!filters.startDate || !filters.endDate)
+                return alert("Выберите дату начала и конца периода!");
+        }
+
+        if (role === "ADMIN" && requireManager.includes(reportType)) {
+            if (!filters.managerId) return alert("Выберите менеджера!");
+        }
+
         let url = "";
-        let filename = "report.pdf";
-
-        const requireDates = [
-            "manager_sales", "manager_top_clients", "manager_top_products", "admin_sales"
-        ];
-
-        const requireManager = [
-            "manager_sales", "manager_top_clients", "manager_top_products"
-        ];
-
-        if (requireDates.includes(reportType) && (!startDate || !endDate)) {
-            return alert("Выберите дату начала и конца периода!");
-        }
-
-        if (
-            (role === "MANAGER" && requireManager.includes(reportType) && !managerId) ||
-            (role === "ADMIN" && reportType.includes("manager") && !managerId)
-        ) {
-            return alert("Выберите менеджера!");
-        }
+        let filename = "";
 
         switch (reportType) {
             case "manager_sales":
-                url = `/reports/manager/${managerId}/sales?startDate=${startDate}&endDate=${endDate}`;
+                url = `/reports/manager/${filters.managerId}/sales`
+                    + `?startDate=${filters.startDate}&endDate=${filters.endDate}&groupBy=${filters.groupBy}`;
                 filename = "manager_sales_report.pdf";
                 break;
+
             case "manager_top_clients":
-                url = `/reports/manager/${managerId}/top-clients?startDate=${startDate}&endDate=${endDate}`;
+                url = `/reports/manager/${filters.managerId}/top-clients`
+                    + `?startDate=${filters.startDate}&endDate=${filters.endDate}`;
                 filename = "manager_top_clients.pdf";
                 break;
+
             case "manager_top_products":
-                url = `/reports/manager/${managerId}/top-products?startDate=${startDate}&endDate=${endDate}`;
+                url = `/reports/manager/${filters.managerId}/top-products`
+                    + `?startDate=${filters.startDate}&endDate=${filters.endDate}`;
                 filename = "manager_top_products.pdf";
                 break;
+
             case "admin_sales":
-                url = `/reports/admin/sales?startDate=${startDate}&endDate=${endDate}`;
+                url = `/reports/admin/sales`
+                    + `?startDate=${filters.startDate}&endDate=${filters.endDate}&groupBy=${filters.groupBy}`;
                 filename = "admin_sales_report.pdf";
                 break;
+
             case "admin_top_managers":
                 url = `/reports/admin/top-managers`;
                 filename = "admin_top_managers.pdf";
                 break;
+
             case "admin_top_products":
                 url = `/reports/admin/top-products`;
                 filename = "admin_top_products.pdf";
                 break;
+
             default:
                 return;
         }
@@ -112,6 +123,7 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
         onClose();
     };
 
+
     return (
         <Modal show={show} onHide={onClose} centered>
             <Modal.Header closeButton>
@@ -119,12 +131,12 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
             </Modal.Header>
 
             <Modal.Body>
+
                 <Form.Group className="mb-3">
                     <Form.Label>Тип отчёта</Form.Label>
                     <Form.Select
                         value={reportType}
                         onChange={e => setReportType(e.target.value)}
-                        disabled={loading}
                     >
                         <option value="">Выберите...</option>
 
@@ -141,23 +153,40 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
                                 <option value="admin_sales">Продажи компании</option>
                                 <option value="admin_top_managers">Топ менеджеров</option>
                                 <option value="admin_top_products">Топ товаров</option>
+                                <option value="manager_sales">Продажи конкретного менеджера</option>
+                                <option value="manager_top_clients">Топ клиентов менеджера</option>
+                                <option value="manager_top_products">Топ товаров менеджера</option>
                             </>
                         )}
                     </Form.Select>
                 </Form.Group>
 
-                <StatisticsFilter filters={filters} onChange={setFilters} />
+                {requireDates.includes(reportType) && (
+                    <StatisticsFilter filters={filters} onChange={setFilters} />
+                )}
 
-                {role === "ADMIN" && reportType.includes("manager") && (
+                {allowGroupBy.includes(reportType) && (
+                    <Form.Group className="mt-3">
+                        <Form.Label>Группировка</Form.Label>
+                        <Form.Select
+                            value={filters.groupBy}
+                            onChange={e => setFilters(prev => ({ ...prev, groupBy: e.target.value }))}
+                        >
+                            <option value="day">По дням</option>
+                            <option value="month">По месяцам</option>
+                            <option value="year">По годам</option>
+                        </Form.Select>
+                    </Form.Group>
+                )}
+
+                {role === "ADMIN" && requireManager.includes(reportType) && (
                     <>
                         <Form.Group className="mt-3">
                             <Form.Label>Поиск менеджера</Form.Label>
                             <Form.Control
-                                type="text"
-                                placeholder="Введите имя менеджера"
                                 value={managerSearch}
                                 onChange={e => setManagerSearch(e.target.value)}
-                                disabled={loading}
+                                placeholder="Введите имя"
                             />
                         </Form.Group>
 
@@ -165,11 +194,9 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
                             <Form.Label>Менеджер</Form.Label>
                             <Form.Select
                                 value={filters.managerId}
-                                onChange={e => setFilters(prev => ({
-                                    ...prev,
-                                    managerId: e.target.value
-                                }))}
-                                disabled={loading}
+                                onChange={e =>
+                                    setFilters(prev => ({ ...prev, managerId: e.target.value }))
+                                }
                             >
                                 <option value="">Выберите менеджера</option>
                                 {filteredManagers.map(m => (
@@ -181,16 +208,16 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
                         </Form.Group>
                     </>
                 )}
+
             </Modal.Body>
 
             <Modal.Footer>
-                <Button variant="secondary" onClick={onClose} disabled={loading}>
-                    Отмена
-                </Button>
+                <Button variant="secondary" onClick={onClose} disabled={loading}>Отмена</Button>
                 <Button variant="warning" onClick={onGenerate} disabled={loading}>
                     {loading ? "Формирование..." : "Сформировать"}
                 </Button>
             </Modal.Footer>
+
         </Modal>
     );
 };
