@@ -13,7 +13,8 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
         startDate: "",
         endDate: "",
         groupBy: "month",
-        managerId: managerId || ""
+        managerId: managerId || "",
+        limit: 10
     });
 
     const [managers, setManagers] = useState([]);
@@ -31,8 +32,9 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
         setFilters({
             startDate: "",
             endDate: "",
-            groupBy: "month",
-            managerId: managerId || ""
+            groupBy: "day",
+            managerId: managerId || "",
+            limit: 100
         });
         setManagerSearch("");
         setLoading(false);
@@ -47,7 +49,6 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
                 sortBy: "fullName",
                 sortDirection: "ASC"
             });
-
             setManagers(res.data.content || []);
         } catch (e) {
             console.error("Ошибка загрузки менеджеров", e);
@@ -61,6 +62,7 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
     const requireDates = ["admin_sales", "manager_sales", "manager_top_clients", "manager_top_products"];
     const requireManager = ["manager_sales", "manager_top_clients", "manager_top_products"];
     const allowGroupBy = ["admin_sales", "manager_sales"];
+    const allowLimit = ["admin_top_managers", "admin_top_products", "manager_top_clients", "manager_top_products"];
 
     const onGenerate = async () => {
 
@@ -78,22 +80,24 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
         let url = "";
         let filename = "";
 
+        const limitParam = allowLimit.includes(reportType) ? `&limit=${filters.limit}` : "";
+
         switch (reportType) {
             case "manager_sales":
                 url = `/reports/manager/${filters.managerId}/sales`
-                    + `?startDate=${filters.startDate}&endDate=${filters.endDate}&groupBy=${filters.groupBy}`;
+                    + `?startDate=${filters.startDate}&endDate=${filters.endDate}&groupBy=${filters.groupBy}&limit=${filters.limit}`;
                 filename = "manager_sales_report.pdf";
                 break;
 
             case "manager_top_clients":
                 url = `/reports/manager/${filters.managerId}/top-clients`
-                    + `?startDate=${filters.startDate}&endDate=${filters.endDate}`;
+                    + `?startDate=${filters.startDate}&endDate=${filters.endDate}&limit=${filters.limit}`;
                 filename = "manager_top_clients.pdf";
                 break;
 
             case "manager_top_products":
                 url = `/reports/manager/${filters.managerId}/top-products`
-                    + `?startDate=${filters.startDate}&endDate=${filters.endDate}`;
+                    + `?startDate=${filters.startDate}&endDate=${filters.endDate}&limit=${filters.limit}`;
                 filename = "manager_top_products.pdf";
                 break;
 
@@ -104,12 +108,14 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
                 break;
 
             case "admin_top_managers":
-                url = `/reports/admin/top-managers`;
+                url = `/reports/admin/top-managers`
+                    + `?startDate=${filters.startDate}&endDate=${filters.endDate}&limit=${filters.limit}`;
                 filename = "admin_top_managers.pdf";
                 break;
 
             case "admin_top_products":
-                url = `/reports/admin/top-products`;
+                url = `/reports/admin/top-products`
+                    + `?startDate=${filters.startDate}&endDate=${filters.endDate}&limit=${filters.limit}`;
                 filename = "admin_top_products.pdf";
                 break;
 
@@ -176,6 +182,18 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
                             <option value="month">По месяцам</option>
                             <option value="year">По годам</option>
                         </Form.Select>
+                    </Form.Group>
+                )}
+
+                {allowLimit.includes(reportType) && (
+                    <Form.Group className="mt-3">
+                        <Form.Label>Количество записей</Form.Label>
+                        <Form.Control
+                            type="number"
+                            min={1}
+                            value={filters.limit}
+                            onChange={e => setFilters(prev => ({ ...prev, limit: e.target.value }))}
+                        />
                     </Form.Group>
                 )}
 

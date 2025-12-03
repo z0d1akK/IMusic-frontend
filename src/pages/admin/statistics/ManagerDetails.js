@@ -1,31 +1,46 @@
 import React, { useEffect, useState } from "react";
 import axios from "../../../api/axiosInstance";
 import { Card, Spinner, Table } from "react-bootstrap";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+    BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
+} from "recharts";
+import StatisticsFilter from "../../../components/statistics/StatisticsFilter";
 
-const ManagersDetails = () => {
+const ManagerDetails = () => {
     const [managerRating, setManagerRating] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [filters, setFilters] = useState({
+        startDate: "2022-01-01",
+        endDate: "2030-01-01",
+        groupBy: "month",
+        limit: 100
+    });
+
     const loadData = async () => {
         setLoading(true);
+
         try {
-            const res = await axios.get("/statistics/manager-rating");
+            const res = await axios.get("/statistics/manager-rating", {
+                params: filters
+            });
             setManagerRating(res.data);
         } catch (err) {
             console.error("Ошибка загрузки рейтинга менеджеров:", err);
-        } finally {
-            setLoading(false);
         }
+
+        setLoading(false);
     };
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [filters]);
 
     return (
         <div className="p-4">
             <h4 className="mb-3">Рейтинг менеджеров</h4>
+
+            <StatisticsFilter filters={filters} onChange={setFilters} />
 
             {loading ? (
                 <Spinner animation="border" />
@@ -33,18 +48,12 @@ const ManagersDetails = () => {
                 <>
                     <Card className="mb-4">
                         <Card.Body style={{ height: "400px" }}>
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer>
                                 <BarChart data={managerRating}>
-                                    <XAxis
-                                        dataKey="managerName"
-                                        tick={false}
-                                        label={{ value: "Менеджеры", position: "insideBottom", offset: 0 }}
-                                    />
-                                    <YAxis
-                                        label={{ value: "Доход, ₽", angle: -90, position: "insideLeft" }}
-                                    />
-                                    <Tooltip/>
-                                    <Bar dataKey="totalRevenue" fill="#6610f2"/>
+                                    <XAxis dataKey="managerName" tick={false} />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Bar dataKey="totalRevenue" fill="#6610f2" />
                                 </BarChart>
                             </ResponsiveContainer>
                         </Card.Body>
@@ -66,7 +75,7 @@ const ManagersDetails = () => {
                                     <tr key={m.managerId}>
                                         <td>{m.managerName}</td>
                                         <td>{m.totalOrders}</td>
-                                        <td>{m.totalRevenue}</td>
+                                        <td>{m.totalRevenue} ₽</td>
                                     </tr>
                                 ))}
                                 </tbody>
@@ -79,4 +88,4 @@ const ManagersDetails = () => {
     );
 };
 
-export default ManagersDetails;
+export default ManagerDetails;

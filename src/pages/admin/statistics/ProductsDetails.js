@@ -1,24 +1,35 @@
 import React, { useEffect, useState } from "react";
 import axios from "../../../api/axiosInstance";
-import {Card, Spinner, Table, Row, Col, Button} from "react-bootstrap";
+import {Card, Spinner, Table, Row, Col} from "react-bootstrap";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import StatisticsFilter from "../../../components/statistics/StatisticsFilter";
 
 const ProductsDetails = () => {
     const [topProducts, setTopProducts] = useState([]);
     const [lowStock, setLowStock] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [filters, setFilters] = useState({
+        startDate: "2022-01-01",
+        endDate: "2030-01-01",
+        groupBy: "month",
+        limit: 20
+    });
+
     const loadData = async () => {
         setLoading(true);
+
         try {
-            const [top, low] = await Promise.all([
-                axios.get("/statistics/top-products?limit=10"),
-                axios.get("/statistics/low-stock?threshold=5")
-            ]);
-            setTopProducts(top.data);
-            setLowStock(low.data);
-        } catch (err) {
-            console.error("Ошибка загрузки товаров:", err);
+            const resTop = await axios.get("/statistics/top-products", {
+                params: filters
+            });
+
+            const resLow = await axios.get("/statistics/low-stock", {
+                params: filters
+            });
+
+            setTopProducts(resTop.data);
+            setLowStock(resLow.data);
         } finally {
             setLoading(false);
         }
@@ -26,11 +37,13 @@ const ProductsDetails = () => {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [filters]);
 
     return (
         <div className="p-4">
             <h4 className="mb-3">Статистика по товарам</h4>
+
+            <StatisticsFilter filters={filters} onChange={setFilters} />
 
             {loading ? (
                 <Spinner animation="border" />
@@ -40,18 +53,12 @@ const ProductsDetails = () => {
                         <Card className="mb-4">
                             <Card.Header>Топ продаваемых товаров</Card.Header>
                             <Card.Body style={{ height: "400px" }}>
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer>
                                     <BarChart data={topProducts}>
-                                        <XAxis
-                                            dataKey="productName"
-                                            tick={false}
-                                            label={{ value: "Товары", position: "insideBottom", offset: 0 }}
-                                        />
-                                        <YAxis
-                                            label={{ value: "Доход, ₽", angle: -90, position: "insideLeft" }}
-                                        />
-                                        <Tooltip/>
-                                        <Bar dataKey="totalRevenue" fill="#198754"/>
+                                        <XAxis dataKey="productName" tick={false} />
+                                        <YAxis />
+                                        <Tooltip />
+                                        <Bar dataKey="totalRevenue" fill="#198754" />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </Card.Body>

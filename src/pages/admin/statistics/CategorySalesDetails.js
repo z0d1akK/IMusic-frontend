@@ -1,28 +1,30 @@
 import React, { useEffect, useState } from "react";
 import axios from "../../../api/axiosInstance";
 import { Card, Spinner, Table } from "react-bootstrap";
-import { PieChart, Pie, Tooltip, Cell, ResponsiveContainer } from "recharts";
+import {
+    BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
+} from "recharts";
 import StatisticsFilter from "../../../components/statistics/StatisticsFilter";
 
-const OrdersDetails = () => {
-    const [orderStatus, setOrderStatus] = useState([]);
+const CategorySalesDetails = () => {
+    const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const [filters, setFilters] = useState({
         startDate: "2022-01-01",
         endDate: "2030-01-01",
         groupBy: "month",
-        limit: 100
+        limit: 60
     });
 
     const loadData = async () => {
         setLoading(true);
 
         try {
-            const res = await axios.get(`/statistics/order-status`, {
+            const res = await axios.get("/statistics/category-sales", {
                 params: filters
             });
-            setOrderStatus(res.data);
+            setData(res.data);
         } finally {
             setLoading(false);
         }
@@ -32,11 +34,9 @@ const OrdersDetails = () => {
         loadData();
     }, [filters]);
 
-    const COLORS = ["#0d6efd", "#198754", "#ffc107", "#dc3545", "#6c757d"];
-
     return (
         <div className="p-4">
-            <h4 className="mb-3">Распределение заказов</h4>
+            <h4 className="mb-3">Продажи по категориям</h4>
 
             <StatisticsFilter filters={filters} onChange={setFilters} />
 
@@ -45,39 +45,35 @@ const OrdersDetails = () => {
             ) : (
                 <>
                     <Card className="mb-4">
-                        <Card.Body style={{ height: "400px" }}>
+                        <Card.Body style={{ height: "420px" }}>
                             <ResponsiveContainer>
-                                <PieChart>
-                                    <Pie data={orderStatus}
-                                         dataKey="count"
-                                         nameKey="status"
-                                         outerRadius={120}
-                                         label>
-                                        {orderStatus.map((_, i) => (
-                                            <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                                        ))}
-                                    </Pie>
+                                <BarChart data={data}>
+                                    <XAxis dataKey="category"/>
+                                    <YAxis />
                                     <Tooltip />
-                                </PieChart>
+                                    <Bar dataKey="totalRevenue" fill="#fd7e14" />
+                                </BarChart>
                             </ResponsiveContainer>
                         </Card.Body>
                     </Card>
 
                     <Card>
-                        <Card.Header>Таблица заказов</Card.Header>
+                        <Card.Header>Таблица категорий</Card.Header>
                         <Card.Body>
                             <Table striped hover>
                                 <thead>
                                 <tr>
-                                    <th>Статус</th>
-                                    <th>Количество</th>
+                                    <th>Категория</th>
+                                    <th>Продано</th>
+                                    <th>Доход</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {orderStatus.map((o) => (
-                                    <tr key={o.status}>
-                                        <td>{o.status}</td>
-                                        <td>{o.count}</td>
+                                {data.map((row, i) => (
+                                    <tr key={i}>
+                                        <td>{row.category}</td>
+                                        <td>{row.totalSold}</td>
+                                        <td>{row.totalRevenue} ₽</td>
                                     </tr>
                                 ))}
                                 </tbody>
@@ -90,4 +86,4 @@ const OrdersDetails = () => {
     );
 };
 
-export default OrdersDetails;
+export default CategorySalesDetails;

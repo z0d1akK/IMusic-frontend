@@ -15,6 +15,7 @@ const AdminHome = () => {
     const [orderStatus, setOrderStatus] = useState([]);
     const [topProducts, setTopProducts] = useState([]);
     const [managerRating, setManagerRating] = useState([]);
+    const [overviewCategoryPreview, setOverviewCategoryPreview] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
@@ -26,13 +27,27 @@ const AdminHome = () => {
                     trendRes,
                     statusRes,
                     topProductsRes,
-                    managersRes
+                    managersRes,
+                    categoryRes
                 ] = await Promise.all([
                     axios.get("/statistics/overview"),
-                    axios.get("/statistics/sales-trends?startDate=2025-01-01&endDate=2025-12-31"),
+                    axios.get("/statistics/sales-trends", {
+                        params: {
+                            startDate: "2025-01-01",
+                            endDate: "2027-12-31",
+                            groupBy: "month",
+                            limit: 100
+                        }
+                    }),
                     axios.get("/statistics/order-status"),
-                    axios.get("/statistics/top-products?limit=5"),
-                    axios.get("/statistics/manager-rating")
+                    axios.get("/statistics/top-products", { params: { limit: 5 } }),
+                    axios.get("/statistics/manager-rating"),
+                    axios.get(`/statistics/category-sales`, {
+                        params: {
+                            startDate: "2022-01-01",
+                            endDate: "2028-12-31",
+                        }
+                    })
                 ]);
 
                 setOverview(overviewRes.data);
@@ -40,6 +55,8 @@ const AdminHome = () => {
                 setOrderStatus(statusRes.data);
                 setTopProducts(topProductsRes.data);
                 setManagerRating(managersRes.data);
+                setOverviewCategoryPreview(categoryRes.data.slice(0, 6))
+
             } catch (err) {
                 console.error("Ошибка загрузки статистики:", err);
             } finally {
@@ -52,8 +69,8 @@ const AdminHome = () => {
 
     if (loading) {
         return (
-            <div className="d-flex justify-content-center align-items-center vh-75">
-                <Spinner animation="border" variant="primary" />
+            <div className="d-flex justify-content-center align-items-center vh-75 mt-5">
+                <Spinner animation="border" variant="black" />
             </div>
         );
     }
@@ -111,8 +128,14 @@ const AdminHome = () => {
                         <Card.Body style={{height: "300px"}}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={salesTrend}>
-                                    <XAxis dataKey="period"/>
-                                    <YAxis/>
+                                    <XAxis
+                                        dataKey="period"
+                                        tick={false}
+                                        label={{ value: "Период", position: "insideBottom", offset: 0 }}
+                                    />
+                                    <YAxis
+                                        label={{ value: "Доход, ₽", angle: -90, position: "insideLeft" }}
+                                    />
                                     <Tooltip/>
                                     <Line type="monotone" dataKey="totalRevenue" stroke="#0d6efd" strokeWidth={2}/>
                                 </LineChart>
@@ -147,8 +170,14 @@ const AdminHome = () => {
                         <Card.Body style={{height: "300px"}}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={topProducts}>
-                                    <XAxis dataKey="productName"/>
-                                    <YAxis/>
+                                    <XAxis
+                                        dataKey="productName"
+                                        tick={false}
+                                        label={{ value: "Товары", position: "insideBottom", offset: 0 }}
+                                    />
+                                    <YAxis
+                                        label={{ value: "Доход, ₽", angle: -90, position: "insideLeft" }}
+                                    />
                                     <Tooltip/>
                                     <Bar dataKey="totalRevenue" fill="#198754"/>
                                 </BarChart>
@@ -163,10 +192,36 @@ const AdminHome = () => {
                         <Card.Body style={{height: "300px"}}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={managerRating}>
-                                    <XAxis dataKey="managerName"/>
-                                    <YAxis/>
+                                    <XAxis
+                                        dataKey="managerName"
+                                        tick={false}
+                                        label={{ value: "Менеджеры", position: "insideBottom", offset: 0 }}
+                                    />
+                                    <YAxis
+                                        label={{ value: "Доход, ₽", angle: -90, position: "insideLeft" }}
+                                    />
                                     <Tooltip/>
                                     <Bar dataKey="totalRevenue" fill="#6610f2"/>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col lg={6}>
+                    <Card
+                        onClick={() => navigate("/admin/statistics/categories")}
+                        className="cursor-pointer mb-4"
+                    >
+                        <Card.Header>Продажи по категориям товаров</Card.Header>
+                        <Card.Body style={{ height: "300px" }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={overviewCategoryPreview}>
+                                    <XAxis dataKey="category"
+                                           tick={false}
+                                           label={{ value: "Категории", position: "insideBottom", offset: 0 }}/>
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Bar dataKey="totalRevenue" fill="#fd7e14" />
                                 </BarChart>
                             </ResponsiveContainer>
                         </Card.Body>

@@ -2,14 +2,15 @@ import React, { useEffect, useState } from "react";
 import axios from "../../../api/axiosInstance";
 import { Row, Col, Card, Spinner, Form, Button } from "react-bootstrap";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import StatisticsFilter from "../../../components/statistics/StatisticsFilter";
 
 const SalesDetails = () => {
     const [salesTrend, setSalesTrend] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const [filters, setFilters] = useState({
-        startDate: "2025-01-01",
-        endDate: "2025-12-31",
+        startDate: "2022-01-01",
+        endDate: "2027-12-31",
         groupBy: "month",
         limit: 100
     });
@@ -34,36 +35,7 @@ const SalesDetails = () => {
         <div className="p-4">
             <h4 className="mb-3">Динамика продаж</h4>
 
-            <Form className="mb-3 d-flex gap-2">
-                <Form.Control
-                    type="date"
-                    value={filters.startDate}
-                    onChange={e => setFilters({ ...filters, startDate: e.target.value })}
-                />
-                <Form.Control
-                    type="date"
-                    value={filters.endDate}
-                    onChange={e => setFilters({ ...filters, endDate: e.target.value })}
-                />
-
-                <Form.Select
-                    value={filters.groupBy}
-                    onChange={e => setFilters({ ...filters, groupBy: e.target.value })}
-                >
-                    <option value="day">По дням</option>
-                    <option value="month">По месяцам</option>
-                    <option value="year">По годам</option>
-                </Form.Select>
-
-                <Form.Select
-                    value={filters.limit}
-                    onChange={e => setFilters({ ...filters, limit: Number(e.target.value) })}
-                >
-                    <option value={30}>30 точек</option>
-                    <option value={60}>60 точек</option>
-                    <option value={100}>100 точек</option>
-                </Form.Select>
-            </Form>
+            <StatisticsFilter filters={filters} onChange={setFilters} />
 
             {loading ? (
                 <Spinner />
