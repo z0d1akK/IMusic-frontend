@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "../../../api/axiosInstance";
-import { Card, Spinner, Table, Row, Col } from "react-bootstrap";
+import {Card, Spinner, Table, Row, Col, Button} from "react-bootstrap";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 const ProductsDetails = () => {
@@ -42,10 +42,16 @@ const ProductsDetails = () => {
                             <Card.Body style={{ height: "400px" }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={topProducts}>
-                                        <XAxis dataKey="productName" />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Bar dataKey="totalRevenue" fill="#198754" />
+                                        <XAxis
+                                            dataKey="productName"
+                                            tick={false}
+                                            label={{ value: "Товары", position: "insideBottom", offset: 0 }}
+                                        />
+                                        <YAxis
+                                            label={{ value: "Доход, ₽", angle: -90, position: "insideLeft" }}
+                                        />
+                                        <Tooltip/>
+                                        <Bar dataKey="totalRevenue" fill="#198754"/>
                                     </BarChart>
                                 </ResponsiveContainer>
                             </Card.Body>

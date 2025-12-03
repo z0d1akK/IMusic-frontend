@@ -6,32 +6,26 @@ import {
 } from "recharts";
 import StatisticsFilter from "../../../components/statistics/StatisticsFilter";
 
-const ManagerClientsDetails = () => {
+const ManagerCategorySalesDetails = () => {
     const managerId = localStorage.getItem("userId");
-    const [topClients, setTopClients] = useState([]);
+
+    const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const [filters, setFilters] = useState({
         startDate: "2022-01-01",
         endDate: "2030-01-01",
-        groupBy: "month",
-        limit: 30
+        managerId
     });
 
     const loadData = async () => {
         setLoading(true);
-
         try {
-            const params = {
-                ...filters,
-                managerId,
-            };
-
-            const res = await axios.get(`/statistics/manager/${managerId}/top-clients`, { params });
-            setTopClients(res.data);
-
-        } catch (err) {
-            console.error("Ошибка загрузки клиентов:", err);
+            const res = await axios.get(
+                `/statistics/category-sales`,
+                { params: filters }
+            );
+            setData(res.data);
         } finally {
             setLoading(false);
         }
@@ -43,7 +37,7 @@ const ManagerClientsDetails = () => {
 
     return (
         <div className="p-4">
-            <h4 className="mb-3">Мои топовые клиенты</h4>
+            <h4 className="mb-3">Продажи по категориям</h4>
 
             <StatisticsFilter filters={filters} onChange={setFilters} />
 
@@ -54,39 +48,33 @@ const ManagerClientsDetails = () => {
                     <Card className="mb-4">
                         <Card.Body style={{ height: "420px" }}>
                             <ResponsiveContainer>
-                                <BarChart data={topClients}>
-                                    <XAxis
-                                        dataKey="clientName"
-                                        tick={false}
-                                        label={{ value: "Клиенты", position: "insideBottom", offset: 0 }}
-                                    />
-                                    <YAxis
-                                        label={{ value: "Потрачено, ₽", angle: -90, position: "insideLeft" }}
-                                    />
-                                    <Tooltip formatter={(v) => `${v} ₽`} />
-                                    <Bar dataKey="totalSpent" fill="#198754" />
+                                <BarChart data={data}>
+                                    <XAxis dataKey="category"/>
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Bar dataKey="totalRevenue" fill="#fd7e14" />
                                 </BarChart>
                             </ResponsiveContainer>
-
-
                         </Card.Body>
                     </Card>
 
                     <Card>
-                        <Card.Header>Таблица клиентов</Card.Header>
+                        <Card.Header>Таблица категорий</Card.Header>
                         <Card.Body>
                             <Table striped hover>
                                 <thead>
                                 <tr>
-                                    <th>Клиент</th>
-                                    <th>Потрачено</th>
+                                    <th>Категория</th>
+                                    <th>Продано</th>
+                                    <th>Доход</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {topClients.map((c) => (
-                                    <tr key={c.clientId}>
-                                        <td>{c.clientName}</td>
-                                        <td>{c.totalSpent} ₽</td>
+                                {data.map((row, i) => (
+                                    <tr key={i}>
+                                        <td>{row.category}</td>
+                                        <td>{row.totalSold}</td>
+                                        <td>{row.totalRevenue} ₽</td>
                                     </tr>
                                 ))}
                                 </tbody>
@@ -99,4 +87,4 @@ const ManagerClientsDetails = () => {
     );
 };
 
-export default ManagerClientsDetails;
+export default ManagerCategorySalesDetails;

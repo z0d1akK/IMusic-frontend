@@ -35,10 +35,16 @@ const ManagersDetails = () => {
                         <Card.Body style={{ height: "400px" }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={managerRating}>
-                                    <XAxis dataKey="managerName" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Bar dataKey="totalRevenue" fill="#6610f2" />
+                                    <XAxis
+                                        dataKey="managerName"
+                                        tick={false}
+                                        label={{ value: "Менеджеры", position: "insideBottom", offset: 0 }}
+                                    />
+                                    <YAxis
+                                        label={{ value: "Доход, ₽", angle: -90, position: "insideLeft" }}
+                                    />
+                                    <Tooltip/>
+                                    <Bar dataKey="totalRevenue" fill="#6610f2"/>
                                 </BarChart>
                             </ResponsiveContainer>
                         </Card.Body>

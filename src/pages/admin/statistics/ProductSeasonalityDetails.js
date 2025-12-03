@@ -4,47 +4,42 @@ import { Card, Spinner, Table } from "react-bootstrap";
 import {
     LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
+import { useParams } from "react-router-dom";
 import StatisticsFilter from "../../../components/statistics/StatisticsFilter";
 
-const ManagerSalesDetails = () => {
-    const managerId = localStorage.getItem("userId");
-
-    const [salesTrend, setSalesTrend] = useState([]);
+const ProductSeasonalityDetails = () => {
+    const { id } = useParams();
+    const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const [filters, setFilters] = useState({
         startDate: "2022-01-01",
         endDate: "2030-01-01",
         groupBy: "month",
-        limit: 30
+        limit: 60
     });
 
-    const loadSales = async () => {
+    const loadData = async () => {
         setLoading(true);
-
         try {
             const params = {
                 ...filters,
-                managerId
             };
 
-            const res = await axios.get(`/statistics/manager/${managerId}/sales-trends`, { params });
-            setSalesTrend(res.data);
-
-        } catch (e) {
-            console.error("Ошибка загрузки тренда:", e);
+            const res = await axios.get(`/statistics/product/${id}/seasonality`, { params });
+            setData(res.data);
+        } finally {
+            setLoading(false);
         }
-
-        setLoading(false);
     };
 
     useEffect(() => {
-        loadSales();
+        loadData();
     }, [filters]);
 
     return (
         <div className="p-4">
-            <h4 className="mb-3">Моя динамика продаж</h4>
+            <h4 className="mb-3">Сезонность продаж товара</h4>
 
             <StatisticsFilter filters={filters} onChange={setFilters} />
 
@@ -55,38 +50,46 @@ const ManagerSalesDetails = () => {
                     <Card className="mb-4">
                         <Card.Body style={{ height: "420px" }}>
                             <ResponsiveContainer>
-                                <LineChart data={salesTrend}>
-                                    <XAxis
-                                        dataKey="period"
-                                        tick={false}
-                                        label={{ value: "Период", position: "insideBottom", offset: 0 }}
+                                <LineChart data={data}>
+                                    <XAxis dataKey="period" tick={false}/>
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="totalSold"
+                                        stroke="#0d6efd"
+                                        strokeWidth={2}
+                                        name="Продано"
                                     />
-                                    <YAxis
-                                        label={{ value: "Доход, ₽", angle: -90, position: "insideLeft" }}
+                                    <Line
+                                        type="monotone"
+                                        dataKey="totalRevenue"
+                                        stroke="#198754"
+                                        strokeWidth={2}
+                                        name="Доход"
                                     />
-                                    <Tooltip formatter={(v) => `${v} ₽`} />
-                                    <Line type="monotone" dataKey="totalRevenue" stroke="#0d6efd" strokeWidth={2}/>
                                 </LineChart>
                             </ResponsiveContainer>
-
                         </Card.Body>
                     </Card>
 
                     <Card>
-                        <Card.Header>Таблица продаж</Card.Header>
+                        <Card.Header>Таблица сезонности</Card.Header>
                         <Card.Body>
                             <Table striped hover>
                                 <thead>
                                 <tr>
                                     <th>Период</th>
+                                    <th>Продано</th>
                                     <th>Доход</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {salesTrend.map((s, index) => (
+                                {data.map((row, index) => (
                                     <tr key={index}>
-                                        <td>{s.period}</td>
-                                        <td>{s.totalRevenue} ₽</td>
+                                        <td>{row.period}</td>
+                                        <td>{row.totalSold}</td>
+                                        <td>{row.totalRevenue} ₽</td>
                                     </tr>
                                 ))}
                                 </tbody>
@@ -99,4 +102,4 @@ const ManagerSalesDetails = () => {
     );
 };
 
-export default ManagerSalesDetails;
+export default ProductSeasonalityDetails;

@@ -1,36 +1,42 @@
 import React, { useEffect, useState } from "react";
 import axios from "../../../api/axiosInstance";
-import { Card, Spinner } from "react-bootstrap";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import StatisticsFilter from "../../../components/statistics/StatisticsFilter"
+import { Card, Spinner, Table, Button } from "react-bootstrap";
+import {
+    BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
+} from "recharts";
+import StatisticsFilter from "../../../components/statistics/StatisticsFilter";
+import { useNavigate } from "react-router-dom";
 
 const ManagerProductsDetails = () => {
     const managerId = localStorage.getItem("userId");
+    const navigate = useNavigate();
 
     const [topProducts, setTopProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const [filters, setFilters] = useState({
-        startDate: "",
-        endDate: "",
-        managerId
+        startDate: "2022-01-01",
+        endDate: "2030-01-01",
+        groupBy: "month",
+        limit: 30
     });
 
     const loadData = async () => {
         setLoading(true);
         try {
-            const params = new URLSearchParams();
-
-            if (filters.startDate) params.append("startDate", filters.startDate);
-            if (filters.endDate) params.append("endDate", filters.endDate);
-
-            params.append("limit", 10);
+            const params = {
+                ...filters,
+                managerId,
+                limit: 20
+            };
 
             const res = await axios.get(
-                `/statistics/manager/${managerId}/top-products?${params}`
+                `/statistics/manager/${managerId}/top-products`,
+                { params }
             );
 
             setTopProducts(res.data);
+
         } finally {
             setLoading(false);
         }
@@ -42,29 +48,69 @@ const ManagerProductsDetails = () => {
 
     return (
         <div className="p-4">
-            <h4>Мои топовые товары</h4>
+            <h4 className="mb-3">Мои топовые товары</h4>
 
-            <StatisticsFilter
-                filters={filters}
-                onChange={setFilters}
-                onApply={loadData}
-            />
+            <StatisticsFilter filters={filters} onChange={setFilters} />
 
             {loading ? (
                 <Spinner animation="border" />
             ) : (
-                <Card>
-                    <Card.Body style={{ height: "400px" }}>
-                        <ResponsiveContainer>
-                            <BarChart data={topProducts}>
-                                <XAxis dataKey="productName" />
-                                <YAxis />
-                                <Tooltip />
-                                <Bar dataKey="totalRevenue" fill="#198754" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </Card.Body>
-                </Card>
+                <>
+                    <Card className="mb-4">
+                        <Card.Body style={{ height: "420px" }}>
+                            <ResponsiveContainer>
+                                <BarChart data={topProducts}>
+                                    <XAxis
+                                        dataKey="productName"
+                                        tick={false}
+                                        label={{ value: "Товары", position: "insideBottom", offset: 0 }}
+                                    />
+                                    <YAxis
+                                        label={{ value: "Доход, ₽", angle: -90, position: "insideLeft" }}
+                                    />
+                                    <Tooltip />
+                                    <Bar dataKey="totalRevenue" fill="#6610f2" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </Card.Body>
+                    </Card>
+
+                    <Card>
+                        <Card.Header>Таблица товаров</Card.Header>
+                        <Card.Body>
+                            <Table striped hover>
+                                <thead>
+                                <tr>
+                                    <th>Товар</th>
+                                    <th>Продано</th>
+                                    <th>Доход</th>
+                                    <th></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {topProducts.map((p) => (
+                                    <tr key={p.productId}>
+                                        <td>{p.productName}</td>
+                                        <td>{p.totalSold}</td>
+                                        <td>{p.totalRevenue} ₽</td>
+                                        <td>
+                                            <Button
+                                                variant="warning"
+                                                size="sm"
+                                                onClick={() =>
+                                                    navigate(`/manager/statistics/product/${p.productId}/seasonality`)
+                                                }
+                                            >
+                                                Сезонность
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </Table>
+                        </Card.Body>
+                    </Card>
+                </>
             )}
         </div>
     );

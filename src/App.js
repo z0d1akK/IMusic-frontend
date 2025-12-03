@@ -28,10 +28,14 @@ import SalesDetails from "./pages/admin/statistics/SalesDetails";
 import OrdersDetails from "./pages/admin/statistics/OrdersDetails";
 import ProductsDetails from "./pages/admin/statistics/ProductsDetails";
 import ManagerDetails from "./pages/admin/statistics/ManagerDetails";
+import ProductSeasonalityDetails from "./pages/admin/statistics/ProductSeasonalityDetails";
+import CategorySalesDetails from "./pages/admin/statistics/CategorySalesDetails";
 
 import ManagerProductsDetails from "./pages/manager/statistics/ManagerProductsDetails";
 import ManagerSalesDetails from "./pages/manager/statistics/ManagerSalesDetails";
 import ManagerClientsDetails from "./pages/manager/statistics/ManagerClientsDetails";
+import ManagerProductSeasonalityDetails from "./pages/manager/statistics/ManagerProductSeasonalityDetails";
+import ManagerCategorySalesDetails from "./pages/manager/statistics/ManagerCategorySalesDetails";
 
 import ClientProfilePage from "./pages/client/ClientProfilePage";
 import CartPage from "./pages/client/CartPage";
@@ -192,9 +196,26 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route
+                            path="/admin/statistics/product/:id/seasonality"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <ProductSeasonalityDetails/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/statistics/categories"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <CategorySalesDetails/>
+                                </ProtectedRoute>
+                            }
+                        />
+
 
                         <Route
-                            path="/manager/*"
+                            path="/manager"
                             element={
                                 <ProtectedRoute allowedRoles={["MANAGER"]}>
                                     <ManagerPage/>
@@ -273,6 +294,23 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route
+                            path="/manager/statistics/product/:id/seasonality"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <ManagerProductSeasonalityDetails/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/manager/statistics/categories"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <ManagerCategorySalesDetails/>
+                                </ProtectedRoute>
+                            }
+                        />
+
 
                         <Route
                             path="/client/cart"
