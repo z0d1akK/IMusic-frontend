@@ -43,6 +43,10 @@ import OrdersPage from "./pages/client/OrdersPage";
 
 import ProductDetailPage from "./pages/ProductsAndCatalogs/ProductDetailPage";
 import ProductCatalogPage from "./pages/ProductsAndCatalogs/ProductCatalogPage";
+import InventoryMovementTrendsDetails from "./pages/admin/statistics/InventoryMovementTrendsDetails";
+import InventoryMovementDetails from "./pages/admin/statistics/InventoryMovementDetails";
+import AvgCheckDetails from "./pages/admin/statistics/AvgCheckDetails";
+import AvgCheckClientDetails from "./pages/admin/statistics/AvgCheckClientDetails";
 
 
 function App() {
@@ -212,6 +216,41 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route
+                            path="/admin/statistics/inventory-trends"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <InventoryMovementTrendsDetails />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/statistics/inventory-movement-details"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <InventoryMovementDetails />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/statistics/avg-check"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <AvgCheckDetails />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="/admin/statistics/avg-check/:clientId"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <AvgCheckClientDetails />
+                                </ProtectedRoute>
+                            }
+                        />
+
+
 
 
                         <Route
@@ -310,7 +349,38 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
-
+                        <Route
+                            path="/manager/statistics/inventory-trends"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <InventoryMovementTrendsDetails isManager />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/manager/statistics/avg-check"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <AvgCheckDetails isManager />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/manager/statistics/avg-check/:clientId"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <AvgCheckClientDetails/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/manager/statistics/inventory-movement-details"
+                            element={
+                                <ProtectedRoute allowedRoles={['MANAGER']}>
+                                    <InventoryMovementDetails />
+                                </ProtectedRoute>
+                            }
+                        />
 
                         <Route
                             path="/client/cart"

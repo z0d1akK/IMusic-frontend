@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import axiosInstance from "../../api/axiosInstance";
-import {Button, Card, Col, Row} from "react-bootstrap";
+import {Button, Card, CardHeader, Col, Row} from "react-bootstrap";
 import {useNavigate} from "react-router-dom";
 import {
     LineChart, Line,
@@ -20,6 +20,7 @@ const ManagerHome = () => {
     const [topClients, setTopClients] = useState([]);
     const [topProducts, setTopProducts] = useState([]);
     const [categoryPreview, setCategoryPreview] = useState([]);
+    const [avgCheck, setAvgCheck] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const loadData = async () => {
@@ -32,7 +33,8 @@ const ManagerHome = () => {
                 trendsRes,
                 clientsRes,
                 productsRes,
-                categoryRes
+                categoryRes,
+                avgRes
             ] = await Promise.all([
                 axiosInstance.get(`/statistics/overview`),
                 axiosInstance.get(`/statistics/manager/${managerId}/sales-trends`, {
@@ -65,7 +67,12 @@ const ManagerHome = () => {
                         endDate: "2028-12-31",
                         managerId
                     }
-                })
+                }),
+                axiosInstance.get(`/statistics/manager/${managerId}/avg-check`, {params: {
+                        startDate: "2022-01-01",
+                        endDate: "2028-12-31",
+                        limit: 100
+                    }})
             ]);
 
             setOverview(overviewRes.data);
@@ -73,6 +80,7 @@ const ManagerHome = () => {
             setTopClients(clientsRes.data);
             setTopProducts(productsRes.data);
             setCategoryPreview(categoryRes.data.slice(0, 6))
+            setAvgCheck(avgRes.data)
         } catch (err) {
             console.error("Ошибка загрузки аналитики менеджера:", err);
         } finally {
@@ -204,25 +212,45 @@ const ManagerHome = () => {
                         </div>
                     </Card>
                 </Col>
-                <Col lg={12} className="mb-4">
-                    <Card
-                        className="p-3 shadow-sm cursor-pointer"
-                        onClick={() => navigate("/manager/statistics/categories")}
-                    >
-                        <h5 className="mb-3">Продажи по категориям</h5>
+                <Row>
+                    <Col lg={6} className="mb-4">
+                        <Card
+                            className="p-3 shadow-sm cursor-pointer"
+                            onClick={() => navigate("/manager/statistics/categories")}
+                        >
+                            <h5 className="mb-3">Продажи по категориям</h5>
 
-                        <div style={{ height: "260px" }}>
-                            <ResponsiveContainer>
-                                <BarChart data={categoryPreview}>
-                                    <XAxis dataKey="category"/>
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Bar dataKey="totalRevenue" fill="#fd7e14" />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </Card>
-                </Col>
+                            <div style={{ height: "260px" }}>
+                                <ResponsiveContainer>
+                                    <BarChart data={categoryPreview}>
+                                        <XAxis dataKey="category"/>
+                                        <YAxis />
+                                        <Tooltip />
+                                        <Bar dataKey="totalRevenue" fill="#fd7e14" />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </Card>
+                    </Col>
+                    <Col lg={6} className="mb-4">
+                        <Card
+                            className="mb-4 cursor-pointer"
+                            onClick={() => navigate("/manager/statistics/avg-check")}
+                        >
+                            <Card.Header>Средний чек клиентов</Card.Header>
+                            <Card.Body style={{height: "300px"}}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={avgCheck} layout="vertical">
+                                        <XAxis type="number"/>
+                                        <YAxis dataKey="clientName" type="category" width={120}/>
+                                        <Tooltip formatter={(v) => `${v} ₽`}/>
+                                        <Bar dataKey="avgCheck" fill="#0d6efd"/>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
             </Row>
 
             <ReportModal

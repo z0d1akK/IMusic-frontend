@@ -84,15 +84,18 @@ const ManagerProductsDetails = () => {
                                     <th>Товар</th>
                                     <th>Продано</th>
                                     <th>Доход</th>
+                                    <th>Сезонность</th>
+                                    <th>Движение</th>
                                     <th></th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {topProducts.map((p) => (
+                                {topProducts.map(p => (
                                     <tr key={p.productId}>
                                         <td>{p.productName}</td>
                                         <td>{p.totalSold}</td>
                                         <td>{p.totalRevenue} ₽</td>
+
                                         <td>
                                             <Button
                                                 variant="warning"
@@ -104,9 +107,22 @@ const ManagerProductsDetails = () => {
                                                 Сезонность
                                             </Button>
                                         </td>
+
+                                        <td>
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() =>
+                                                    navigate(`/manager/statistics/inventory-movement-details?productId=${p.productId}`)
+                                                }
+                                            >
+                                                Движение
+                                            </Button>
+                                        </td>
                                     </tr>
                                 ))}
                                 </tbody>
+
                             </Table>
                         </Card.Body>
                     </Card>

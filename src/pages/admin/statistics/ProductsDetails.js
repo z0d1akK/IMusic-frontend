@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import axios from "../../../api/axiosInstance";
-import {Card, Spinner, Table, Row, Col} from "react-bootstrap";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {Card, Spinner, Table, Row, Col, Button} from "react-bootstrap";
+import {BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer} from "recharts";
 import StatisticsFilter from "../../../components/statistics/StatisticsFilter";
+import {useNavigate} from "react-router-dom";
 
 const ProductsDetails = () => {
+    const navigate = useNavigate();
+
     const [topProducts, setTopProducts] = useState([]);
     const [lowStock, setLowStock] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -43,28 +46,76 @@ const ProductsDetails = () => {
         <div className="p-4">
             <h4 className="mb-3">Статистика по товарам</h4>
 
-            <StatisticsFilter filters={filters} onChange={setFilters} />
+            <StatisticsFilter filters={filters} onChange={setFilters}/>
 
             {loading ? (
-                <Spinner animation="border" />
+                <Spinner animation="border"/>
             ) : (
                 <Row>
-                    <Col lg={6}>
+                    <Col lg={12}>
                         <Card className="mb-4">
                             <Card.Header>Топ продаваемых товаров</Card.Header>
-                            <Card.Body style={{ height: "400px" }}>
+                            <Card.Body style={{height: "400px"}}>
                                 <ResponsiveContainer>
                                     <BarChart data={topProducts}>
-                                        <XAxis dataKey="productName" tick={false} />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Bar dataKey="totalRevenue" fill="#198754" />
+                                        <XAxis dataKey="productName" tick={false}/>
+                                        <YAxis/>
+                                        <Tooltip/>
+                                        <Bar dataKey="totalRevenue" fill="#198754"/>
                                     </BarChart>
                                 </ResponsiveContainer>
                             </Card.Body>
                         </Card>
                     </Col>
-
+                    <Col lg={6}>
+                        <Card className="mb-4">
+                            <Card.Header>Таблица топовых товаров</Card.Header>
+                            <Card.Body>
+                                <Table striped hover>
+                                    <thead>
+                                    <tr>
+                                        <th>Название</th>
+                                        <th>Продано</th>
+                                        <th>Доход</th>
+                                        <th>Сезонность</th>
+                                        <th>Движение</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {topProducts.map(p => (
+                                        <tr key={p.productId}>
+                                            <td>{p.productName}</td>
+                                            <td>{p.totalSold}</td>
+                                            <td>{p.totalRevenue} ₽</td>
+                                            <td>
+                                                <Button
+                                                    variant="warning"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        navigate(`/admin/statistics/product/${p.productId}/seasonality`)
+                                                    }
+                                                >
+                                                    Сезонность
+                                                </Button>
+                                            </td>
+                                            <td>
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        navigate(`/admin/statistics/inventory-movement-details?productId=${p.productId}`)
+                                                    }
+                                                >
+                                                    Движение
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </Table>
+                            </Card.Body>
+                        </Card>
+                    </Col>
                     <Col lg={6}>
                         <Card>
                             <Card.Header>Товары с низким остатком</Card.Header>
@@ -74,6 +125,7 @@ const ProductsDetails = () => {
                                     <tr>
                                         <th>Название</th>
                                         <th>Остаток</th>
+                                        <th>Мин. остаток</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -81,6 +133,7 @@ const ProductsDetails = () => {
                                         <tr key={p.productId}>
                                             <td>{p.productName}</td>
                                             <td>{p.stockQuantity}</td>
+                                            <td>{p.minStockLevel}</td>
                                         </tr>
                                     ))}
                                     </tbody>
