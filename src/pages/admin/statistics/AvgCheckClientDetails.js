@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "../../../api/axiosInstance";
 import { Card, Spinner, Table } from "react-bootstrap";
-import { useParams } from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
 import StatisticsFilter from "../../../components/statistics/StatisticsFilter";
 
 const AvgCheckClientDetails = () => {
+    const navigate = useNavigate();
     const { clientId } = useParams();
 
     const [filters, setFilters] = useState({
@@ -39,13 +40,22 @@ const AvgCheckClientDetails = () => {
 
     return (
         <div className="p-4">
-            <h4 className="mb-3">
-                Детализация среднего чека — {clientName} (ID: {clientId})
-            </h4>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h4 className="mb-3">
+                    Детализация среднего чека — {clientName} (ID: {clientId})
+                </h4>
 
-            <StatisticsFilter filters={filters} onChange={setFilters} />
+                <button
+                    className="btn btn-outline-dark"
+                    onClick={() => navigate(-1)}
+                >
+                    ← Назад
+                </button>
+            </div>
 
-            {loading ? <Spinner /> : (
+            <StatisticsFilter filters={filters} onChange={setFilters}/>
+
+            {loading ? <Spinner/> : (
                 <>
                     <Card className="mb-4">
                         <Card.Body>

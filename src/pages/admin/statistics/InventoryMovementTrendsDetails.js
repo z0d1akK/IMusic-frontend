@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "../../../api/axiosInstance";
 import { Card, Spinner, Table, Button } from "react-bootstrap";
 import StatisticsFilter from "../../../components/statistics/StatisticsFilter";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useNavigate } from "react-router-dom";
 
 const InventoryMovementTrendsDetails = ({ isManager = false }) => {
@@ -22,6 +22,16 @@ const InventoryMovementTrendsDetails = ({ isManager = false }) => {
     const [topProducts, setTopProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [search, setSearch] = useState("");
+    const [categories, setCategories] = useState([]);
+    const [tableCategoryFilter, setTableCategoryFilter] = useState("");
+
+    useEffect(() => {
+        axios.get("/ref/product-categories")
+            .then(res => setCategories(res.data))
+            .catch(() => setCategories([]));
+    }, []);
+
     const loadData = async () => {
         setLoading(true);
         try {
@@ -29,8 +39,9 @@ const InventoryMovementTrendsDetails = ({ isManager = false }) => {
                 startDate: filters.startDate,
                 endDate: filters.endDate,
                 groupBy: filters.groupBy,
-                limit: filters.limit,
+                limit: filters.limit
             };
+
             if (filters.productId) movementParams.productId = filters.productId;
             if (filters.categoryId) movementParams.categoryId = filters.categoryId;
 
@@ -39,6 +50,7 @@ const InventoryMovementTrendsDetails = ({ isManager = false }) => {
                 endDate: filters.endDate,
                 limit: filters.limit
             };
+
             if (isManager) productsParams.managerId = managerId;
 
             const [movementRes, productsRes] = await Promise.all([
@@ -50,6 +62,7 @@ const InventoryMovementTrendsDetails = ({ isManager = false }) => {
 
             setMovementData(movementRes.data);
             setTopProducts(productsRes.data);
+
         } catch (err) {
             console.error("Ошибка загрузки данных:", err);
         } finally {
@@ -60,6 +73,16 @@ const InventoryMovementTrendsDetails = ({ isManager = false }) => {
     useEffect(() => {
         loadData();
     }, [filters]);
+
+
+    const filteredTable = topProducts
+        .filter(p =>
+            p.productName.toLowerCase().includes(search.toLowerCase())
+        )
+        .filter(p =>
+            tableCategoryFilter ? p.categoryId === Number(tableCategoryFilter) : true
+        );
+
 
     if (loading) return <Spinner animation="border" className="m-4" />;
 
@@ -76,12 +99,53 @@ const InventoryMovementTrendsDetails = ({ isManager = false }) => {
                             <XAxis dataKey="period" />
                             <YAxis />
                             <Tooltip />
-                            <Line type="monotone" dataKey="incoming" stroke="#198754" strokeWidth={2} name="Приход" />
-                            <Line type="monotone" dataKey="outgoing" stroke="#dc3545" strokeWidth={2} name="Расход" />
+                            <Line
+                                type="monotone"
+                                dataKey="incoming"
+                                stroke="#198754"
+                                strokeWidth={2}
+                                name="Приход"
+                            />
+                            <Line
+                                type="monotone"
+                                dataKey="outgoing"
+                                stroke="#dc3545"
+                                strokeWidth={2}
+                                name="Расход"
+                            />
                         </LineChart>
                     </ResponsiveContainer>
                 </Card.Body>
             </Card>
+
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <input
+                    type="text"
+                    className="form-control w-50"
+                    placeholder="Поиск товара..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+
+                <select
+                    className="form-select w-25"
+                    value={tableCategoryFilter}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        setTableCategoryFilter(value);
+
+                        setFilters(prev => ({
+                            ...prev,
+                            categoryId: value ? Number(value) : ""
+                        }));
+                    }}
+                >
+                    <option value="">Все категории</option>
+                    {categories.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                </select>
+            </div>
 
             <Card>
                 <Card.Header>Топовые товары</Card.Header>
@@ -97,11 +161,12 @@ const InventoryMovementTrendsDetails = ({ isManager = false }) => {
                         </tr>
                         </thead>
                         <tbody>
-                        {topProducts.map(p => (
+                        {filteredTable.map(p => (
                             <tr key={p.productId}>
                                 <td>{p.productName}</td>
                                 <td>{p.totalSold}</td>
                                 <td>{p.totalRevenue} ₽</td>
+
                                 <td>
                                     <Button
                                         variant="warning"
@@ -117,6 +182,7 @@ const InventoryMovementTrendsDetails = ({ isManager = false }) => {
                                         Сезонность
                                     </Button>
                                 </td>
+
                                 <td>
                                     <Button
                                         variant="secondary"

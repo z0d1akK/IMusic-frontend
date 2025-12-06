@@ -46,7 +46,13 @@ const AdminHome = () => {
                     axios.get(`/statistics/category-sales`, { params: {
                             startDate: "2022-01-01",
                             endDate: "2028-12-31" } }),
-                    axios.get("/statistics/avg-check", { params: { limit: 5 } }),
+                    axios.get("/statistics/avg-check", {
+                        params: {
+                            startDate: "2022-01-01",
+                            endDate: "2030-01-01",
+                            limit: 5
+                        }
+                    }),
                     axios.get("/statistics/inventory-movement-trends", {
                         params: {
                             startDate: "2024-01-01",

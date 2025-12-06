@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "../../../api/axiosInstance";
 import { Card, Table, Spinner } from "react-bootstrap";
 import StatisticsFilter from "../../../components/statistics/StatisticsFilter";
-import { useLocation } from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import {
     LineChart,
     Line,
@@ -14,6 +14,7 @@ import {
 
 const InventoryMovementDetails = () => {
 
+    const navigate = useNavigate();
     const location = useLocation();
     const query = new URLSearchParams(location.search);
 
@@ -85,22 +86,31 @@ const InventoryMovementDetails = () => {
 
     return (
         <div className="p-4">
-            <h4 className="mb-3">Движение товаров — подробности</h4>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h4 className="m-0">Движение товаров — подробности</h4>
 
-            <StatisticsFilter filters={filters} onChange={setFilters} />
+                <button
+                    className="btn btn-outline-dark"
+                    onClick={() => navigate(-1)}
+                >
+                    ← Назад
+                </button>
+            </div>
+
+            <StatisticsFilter filters={filters} onChange={setFilters}/>
 
             {loading ? (
-                <Spinner />
+                <Spinner/>
             ) : (
                 <>
                     <Card className="mb-4">
                         <Card.Header>График движения товара</Card.Header>
-                        <Card.Body style={{ height: "350px" }}>
+                        <Card.Body style={{height: "350px"}}>
                             <ResponsiveContainer>
                                 <LineChart data={chartData.toReversed()}>
-                                    <XAxis dataKey="period" />
-                                    <YAxis />
-                                    <Tooltip />
+                                    <XAxis dataKey="period"/>
+                                    <YAxis/>
+                                    <Tooltip/>
                                     <Line
                                         type="monotone"
                                         dataKey="incoming"

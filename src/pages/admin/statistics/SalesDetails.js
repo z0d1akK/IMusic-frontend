@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import axios from "../../../api/axiosInstance";
-import { Row, Col, Card, Spinner, Form, Button } from "react-bootstrap";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {Row, Col, Card, Spinner, Form, Button, Table} from "react-bootstrap";
+import {LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer} from "recharts";
 import StatisticsFilter from "../../../components/statistics/StatisticsFilter";
 
 const SalesDetails = () => {
@@ -35,29 +35,53 @@ const SalesDetails = () => {
         <div className="p-4">
             <h4 className="mb-3">Динамика продаж</h4>
 
-            <StatisticsFilter filters={filters} onChange={setFilters} />
+            <StatisticsFilter filters={filters} onChange={setFilters}/>
 
             {loading ? (
-                <Spinner />
+                <Spinner/>
             ) : (
-                <Card>
-                    <Card.Body style={{ height: 400 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={salesTrend}>
-                                <XAxis
-                                    dataKey="period"
-                                    tick={false}
-                                    label={{ value: "Период", position: "insideBottom", offset: 0 }}
-                                />
-                                <YAxis
-                                    label={{ value: "Доход, ₽", angle: -90, position: "insideLeft" }}
-                                />
-                                <Tooltip/>
-                                <Line dataKey="totalRevenue" stroke="#0d6efd" strokeWidth={2}/>
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </Card.Body>
-                </Card>
+                <>
+                    <Card>
+                        <Card.Body style={{height: 400}}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={salesTrend}>
+                                    <XAxis
+                                        dataKey="period"
+                                        tick={false}
+                                        label={{value: "Период", position: "insideBottom", offset: 0}}
+                                    />
+                                    <YAxis
+                                        label={{value: "Доход, ₽", angle: -90, position: "insideLeft"}}
+                                    />
+                                    <Tooltip/>
+                                    <Line dataKey="totalRevenue" stroke="#0d6efd" strokeWidth={2}/>
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </Card.Body>
+                    </Card>
+
+                    <Card>
+                        <Card.Header>Таблица продаж</Card.Header>
+                        <Card.Body>
+                            <Table striped hover>
+                                <thead>
+                                <tr>
+                                    <th>Период</th>
+                                    <th>Доход</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {salesTrend.map((s, index) => (
+                                    <tr key={index}>
+                                        <td>{s.period}</td>
+                                        <td>{s.totalRevenue} ₽</td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </Table>
+                        </Card.Body>
+                    </Card>
+                </>
             )}
         </div>
     );
