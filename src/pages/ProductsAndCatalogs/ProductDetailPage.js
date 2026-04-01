@@ -2,20 +2,33 @@ import React, {useEffect, useState} from 'react';
 import {useParams, useNavigate} from 'react-router-dom';
 import {getImageUrl} from "../../utils/image";
 import axios from '../../api/axiosInstance';
+import {
+    getComparisonId,
+    setComparisonId,
+    addProductToLocalComparison,
+    isInComparison,
+    syncComparisonWithServer
+} from "../../utils/comparison";
+import {
+    getWishlist,
+    addToWishlist,
+    removeFromWishlist
+} from "../../utils/wishlist";
 
 export default function ProductDetailPage() {
     const {id} = useParams();
     const navigate = useNavigate();
+
     const [product, setProduct] = useState(null);
     const [attributes, setAttributes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [inCart, setInCart] = useState(false);
     const [showToast, setShowToast] = useState(false);
+    const [isFavorite, setIsFavorite] = useState(false);
 
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
     const isAuthenticated = !!token && !!userId;
-    const roles = JSON.parse(localStorage.getItem("roles")) || [];
 
     useEffect(() => {
         if (!id || isNaN(parseInt(id))) {
@@ -33,7 +46,18 @@ export default function ProductDetailPage() {
             .catch(() => setAttributes([]));
 
         if (isAuthenticated) {
-            axios.get(`/cart/${userId}`)
+            // Check if product is in wishlist
+            getWishlist().then(res => {
+                const exists = res.data.some(p => p.id === parseInt(id));
+                setIsFavorite(exists);
+            }).catch(() => setIsFavorite(false));
+
+            // Check if product is in cart
+            axios.get(`/clients/profile`)
+                .then(clientRes => {
+                    const clientId = clientRes.data.id;
+                    return axios.get(`/cart/${clientId}`);
+                })
                 .then(cartRes => {
                     const cartId = cartRes.data.id;
                     return axios.get(`/cart/${cartId}/items`);
@@ -43,12 +67,19 @@ export default function ProductDetailPage() {
                     setInCart(exists);
                 })
                 .catch(() => {
+                    setInCart(false);
                 });
         }
-    }, [id]);
 
+    }, [id, isAuthenticated]);
 
     const handleAddToCart = () => {
+        if (!isAuthenticated) {
+            alert("Для добавления товаров в корзину необходимо войти в аккаунт");
+            navigate('/login');
+            return;
+        }
+
         axios.get('/clients/profile')
             .then(clientRes => {
                 const clientId = clientRes.data.id;
@@ -68,8 +99,47 @@ export default function ProductDetailPage() {
             .catch(() => alert("Ошибка при добавлении в корзину"));
     };
 
+    const toggleWishlist = () => {
+        if (!isAuthenticated) {
+            alert("Для добавления товаров в избранное необходимо войти в аккаунт");
+            navigate('/login');
+            return;
+        }
 
-    const handleBack = () => navigate('/catalog');
+        const action = isFavorite
+            ? removeFromWishlist(id)
+            : addToWishlist(id);
+
+        action.then(() => setIsFavorite(!isFavorite));
+    };
+
+    const handleAddToCompare = async (productId) => {
+        if (!isAuthenticated) {
+            alert("Для добавления товаров в сравнение необходимо войти в аккаунт");
+            navigate('/login');
+            return;
+        }
+
+        try {
+            let comparisonId = getComparisonId();
+
+            if (!comparisonId) {
+                const res = await axios.post('/products/comparisons', [productId]);
+                comparisonId = res.data;
+                setComparisonId(comparisonId);
+            } else {
+                await axios.post(`/products/comparisons/${comparisonId}/products/${productId}`);
+            }
+
+            addProductToLocalComparison(productId);
+            await syncComparisonWithServer();
+
+            alert("Товар добавлен в сравнение");
+        } catch (e) {
+            console.error('Ошибка при добавлении в сравнение:', e);
+            alert("Ошибка при добавлении в сравнение");
+        }
+    };
 
     if (loading || !product) return <div className="container mt-5 text-center">Загрузка...</div>;
 
@@ -90,18 +160,48 @@ export default function ProductDetailPage() {
                         <p className="text-muted mb-3">{product.description || 'Описание отсутствует'}</p>
                         <h4 className="text-success fw-bold">{product.price?.toFixed(2)} р.</h4>
 
-                        <div className="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div className="mt-4 d-flex flex-wrap gap-2">
+                            {/* Кнопка добавления в корзину */}
                             {!isAuthenticated ? (
                                 <div className="alert alert-warning mb-0">
                                     <strong>Войдите</strong>, чтобы добавить товар в корзину
                                 </div>
                             ) : inCart ? (
                                 <button className="btn btn-secondary" disabled>
+                                    <i className="bi bi-check me-2"></i>
                                     Уже в корзине
                                 </button>
                             ) : (
                                 <button className="btn btn-success" onClick={handleAddToCart}>
-                                    <i className="bi bi-cart-plus me-2"></i>Добавить в корзину
+                                    <i className="bi bi-cart-plus me-2"></i>
+                                    Добавить в корзину
+                                </button>
+                            )}
+
+                            {/* Кнопка избранного */}
+                            <button
+                                className={`btn ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}`}
+                                onClick={toggleWishlist}
+                                disabled={!isAuthenticated}
+                            >
+                                <i className="bi bi-heart me-2"></i>
+                                {isFavorite ? 'Убрать из избранного' : 'В избранное'}
+                            </button>
+
+                            {/* Кнопка сравнения */}
+                            {isInComparison(product.id) ? (
+                                <button className="btn btn-outline-warning" disabled>
+                                    <i className="bi bi-bar-chart me-2"></i>
+                                    Товар уже в сравнении
+                                </button>
+                            ) : (
+                                <button
+                                    className="btn btn-outline-warning"
+                                    onClick={() => handleAddToCompare(product.id)}
+                                    disabled={!isAuthenticated}
+                                >
+                                    <i className="bi bi-bar-chart me-2"></i>
+                                    Сравнить
                                 </button>
                             )}
                         </div>
@@ -122,7 +222,7 @@ export default function ProductDetailPage() {
                     </div>
 
                     <div className="text-end mt-4">
-                        <button className="btn btn-warning" onClick={handleBack}>
+                        <button className="btn btn-warning" onClick={() => navigate('/catalog')}>
                             Вернуться в каталог
                         </button>
                     </div>
@@ -134,11 +234,7 @@ export default function ProductDetailPage() {
                     <div className="toast show align-items-center text-bg-success border-0">
                         <div className="d-flex">
                             <div className="toast-body">Товар добавлен в корзину!</div>
-                            <button
-                                type="button"
-                                className="btn-close btn-close-white me-2 m-auto"
-                                onClick={() => setShowToast(false)}
-                            />
+                            <button type="button" className="btn-close btn-close-white me-2 m-auto" onClick={() => setShowToast(false)} />
                         </div>
                     </div>
                 </div>

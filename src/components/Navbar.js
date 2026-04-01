@@ -77,7 +77,7 @@ const Navbar = () => {
                             </li>
                         )}
 
-                        {(roles.includes('ADMIN') || roles.includes('MANAGER')) && (
+                            {(roles.includes('MANAGER')) && (
                             <li className="nav-item dropdown">
                                 <span
                                     className="nav-link dropdown-toggle text-light"
@@ -119,12 +119,6 @@ const Navbar = () => {
                         {roles.includes('ADMIN') && (
                             <>
                                 <li className="nav-item">
-                                    <Link className="nav-link text-light" to="/orders/management">Заказы</Link>
-                                </li>
-                                <li className="nav-item">
-                                    <Link className="nav-link text-light" to="/admin/clients">Клиенты</Link>
-                                </li>
-                                <li className="nav-item">
                                     <Link className="nav-link text-light" to="/admin/users">Пользователи</Link>
                                 </li>
                                 <li className="nav-item">
@@ -147,7 +141,13 @@ const Navbar = () => {
                         {roles.includes('CLIENT') && (
                             <>
                                 <li className="nav-item">
-                                <Link className="nav-link text-light" to="/client/cart">Корзина</Link>
+                                    <Link className="nav-link text-light" to="/client/wishlist">Избранное</Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className="nav-link text-light" to="/compare">Сравнение</Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className="nav-link text-light" to="/client/cart">Корзина</Link>
                                 </li>
                                 <li className="nav-item">
                                     <Link className="nav-link text-light" to="/client/orders">Заказы</Link>

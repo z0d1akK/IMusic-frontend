@@ -37,6 +37,8 @@ import ManagerClientsDetails from "./pages/manager/statistics/ManagerClientsDeta
 import ManagerProductSeasonalityDetails from "./pages/manager/statistics/ManagerProductSeasonalityDetails";
 import ManagerCategorySalesDetails from "./pages/manager/statistics/ManagerCategorySalesDetails";
 
+import WishlistPage from "./pages/client/WishListPage";
+import ComparisonPage from "./pages/ComparisonPage";
 import ClientProfilePage from "./pages/client/ClientProfilePage";
 import CartPage from "./pages/client/CartPage";
 import OrdersPage from "./pages/client/OrdersPage";
@@ -47,7 +49,6 @@ import InventoryMovementTrendsDetails from "./pages/admin/statistics/InventoryMo
 import InventoryMovementDetails from "./pages/admin/statistics/InventoryMovementDetails";
 import AvgCheckDetails from "./pages/admin/statistics/AvgCheckDetails";
 import AvgCheckClientDetails from "./pages/admin/statistics/AvgCheckClientDetails";
-
 
 function App() {
     return (
@@ -382,6 +383,22 @@ function App() {
                             }
                         />
 
+                        <Route
+                            path="/client/wishlist"
+                            element={
+                                <ProtectedRoute allowedRoles={['CLIENT']}>
+                                    <WishlistPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/compare"
+                            element={
+                                <ProtectedRoute allowedRoles={['CLIENT']}>
+                                    <ComparisonPage/>
+                                </ProtectedRoute>
+                            }
+                        />
                         <Route
                             path="/client/cart"
                             element={

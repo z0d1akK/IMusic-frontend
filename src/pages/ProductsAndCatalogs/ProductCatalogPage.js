@@ -2,6 +2,17 @@ import React, { useEffect, useState } from 'react';
 import axios from '../../api/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import { getImageUrl } from "../../utils/image";
+import {
+    getComparisonId,
+    setComparisonId,
+    addProductToLocalComparison,
+    syncComparisonWithServer
+} from "../../utils/comparison";
+import {
+    getWishlist,
+    addToWishlist,
+    removeFromWishlist
+} from "../../utils/wishlist";
 
 export default function ProductCatalogPage() {
     const navigate = useNavigate();
@@ -22,6 +33,13 @@ export default function ProductCatalogPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [showFilters, setShowFilters] = useState(false);
 
+    const [comparisonIds, setComparisonIds] = useState([]);
+    const [wishlistIds, setWishlistIds] = useState([]);
+
+    const roles = JSON.parse(localStorage.getItem("roles")) || [];
+    const token = localStorage.getItem('token');
+    const isAuthenticated = !!token && roles.includes('CLIENT');
+
     const pageSize = 12;
 
     useEffect(() => {
@@ -30,9 +48,30 @@ export default function ProductCatalogPage() {
             .catch(() => setCategories([]));
     }, []);
 
+    useEffect(() => {
+        if (isAuthenticated) {
+            setComparisonIds(JSON.parse(localStorage.getItem("comparisonProducts") || "[]"));
+        } else {
+            setComparisonIds([]);
+        }
+    }, [isAuthenticated]);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            getWishlist()
+                .then(res => {
+                    const ids = res.data.map(p => p.id);
+                    setWishlistIds(ids);
+                })
+                .catch(() => setWishlistIds([]));
+        } else {
+            setWishlistIds([]);
+        }
+    }, [isAuthenticated]);
+
     const load = () => {
         const request = {
-            page: page,
+            page,
             size: pageSize,
             categoryId: categoryFilter ? Number(categoryFilter) : null,
             minPrice: minPriceFilter ? Number(minPriceFilter) : null,
@@ -51,7 +90,6 @@ export default function ProductCatalogPage() {
             .catch(console.error);
     };
 
-
     useEffect(() => {
         const timeout = setTimeout(() => {
             if ((minPriceFilter && Number(minPriceFilter) < 0) || (maxPriceFilter && Number(maxPriceFilter) < 0)) {
@@ -68,7 +106,6 @@ export default function ProductCatalogPage() {
         return () => clearTimeout(timeout);
     }, [search, categoryFilter, minPriceFilter, maxPriceFilter, sortField, sortDir, page]);
 
-
     const findCategoryName = (categoryId) => {
         const cat = categories.find(c => c.id === categoryId);
         return cat ? cat.name : '-';
@@ -79,9 +116,42 @@ export default function ProductCatalogPage() {
         return u ? u.name : '';
     };
 
+    const handleAddToCompare = async (productId) => {
+        try {
+            let comparisonId = getComparisonId();
+
+            if (!comparisonId) {
+                const res = await axios.post('/products/comparisons', [productId]);
+                comparisonId = res.data;
+                setComparisonId(comparisonId);
+            } else {
+                await axios.post(`/products/comparisons/${comparisonId}/products/${productId}`);
+            }
+
+            addProductToLocalComparison(productId);
+            setComparisonIds(prev => [...prev, productId]);
+
+            await syncComparisonWithServer();
+
+        } catch (e) {
+            console.error('Ошибка при добавлении в сравнение:', e);
+            alert("Ошибка при добавлении в сравнение");
+        }
+    };
+
+    const toggleWishlist = (productId) => {
+        if (wishlistIds.includes(productId)) {
+            removeFromWishlist(productId)
+                .then(() => setWishlistIds(prev => prev.filter(id => id !== productId)));
+        } else {
+            addToWishlist(productId)
+                .then(() => setWishlistIds(prev => [...prev, productId]));
+        }
+    };
+
+
     return (
         <div className="container mt-4">
-
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="mb-0">Каталог товаров</h2>
                 <input
@@ -90,7 +160,7 @@ export default function ProductCatalogPage() {
                     value={search}
                     onChange={e => {
                         setSearch(e.target.value);
-                        setPage(1);
+                        setPage(0);
                     }}
                 />
                 <button
@@ -110,7 +180,7 @@ export default function ProductCatalogPage() {
                                 value={categoryFilter}
                                 onChange={e => {
                                     setCategoryFilter(e.target.value);
-                                    setPage(1);
+                                    setPage(0);
                                 }}
                             >
                                 <option value="">Все категории</option>
@@ -125,7 +195,7 @@ export default function ProductCatalogPage() {
                                 value={minPriceFilter}
                                 onChange={e => {
                                     setMinPriceFilter(e.target.value);
-                                    setPage(1);
+                                    setPage(0);
                                 }}
                                 min="0"
                             />
@@ -138,9 +208,9 @@ export default function ProductCatalogPage() {
                                 value={maxPriceFilter}
                                 onChange={e => {
                                     setMaxPriceFilter(e.target.value);
-                                    setPage(1);
+                                    setPage(0);
                                 }}
-                                min={maxPriceFilter}
+                                min="0"
                             />
                         </div>
                         <div className="col-sm">
@@ -151,7 +221,7 @@ export default function ProductCatalogPage() {
                                     const [f, d] = e.target.value.split('_');
                                     setSortField(f === '_' ? '' : f);
                                     setSortDir(d);
-                                    setPage(1);
+                                    setPage(0);
                                 }}
                             >
                                 <option value="_">Без сортировки</option>
@@ -173,16 +243,74 @@ export default function ProductCatalogPage() {
                         onClick={() => navigate(`/catalog/${p.id}`)}
                         style={{cursor: 'pointer'}}
                     >
-                        <div className="card h-100 shadow-sm text-center p-3 align-items-center">
-                            <img
-                                src={getImageUrl(p.imagePath)}
-                                alt={p.name}
-                                className="mb-2"
-                                style={{width: 120, height: 120, objectFit: 'contain'}}
-                            />
-                            <h5>{p.name}</h5>
-                            <p className="text-muted">{findCategoryName(p.categoryId)}</p>
-                            <p><b>{p.price?.toFixed(2) ?? '-'} р.</b> {findUnitName(p.unitId)}</p>
+                        <div className="card h-100 shadow-sm p-3 d-flex flex-column">
+                            <div className="text-center">
+                                <img
+                                    src={getImageUrl(p.imagePath)}
+                                    alt={p.name}
+                                    style={{width: 120, height: 120, objectFit: 'contain'}}
+                                />
+                            </div>
+                            <div className="mt-2 text-center" style={{minHeight: 90}}>
+                                <h6
+                                    className="fw-bold mb-1"
+                                    style={{
+                                        overflow: 'hidden',
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical'
+                                    }}
+                                >
+                                    {p.name}
+                                </h6>
+                                <p className="text-muted mb-1 small">
+                                    {findCategoryName(p.categoryId)}
+                                </p>
+                                <p className="mb-0">
+                                    <b>{p.price?.toFixed(2) ?? '-'} р.</b> {findUnitName(p.unitId)}
+                                </p>
+                            </div>
+
+                            {isAuthenticated && (
+                                <div className="mt-auto d-flex flex-column gap-2">
+
+                                    <button
+                                        className={`btn btn-sm w-100 ${
+                                            wishlistIds.includes(p.id)
+                                                ? 'btn-danger'
+                                                : 'btn-outline-danger'
+                                        }`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleWishlist(p.id);
+                                        }}
+                                    >
+                                        {wishlistIds.includes(p.id)
+                                            ? 'Убрать из избранного'
+                                            : 'В избранное'}
+                                    </button>
+
+                                    {comparisonIds.includes(p.id) ? (
+                                        <button
+                                            className="btn btn-outline-warning btn-sm w-100"
+                                            disabled
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            Уже в сравнении
+                                        </button>
+                                    ) : (
+                                        <button
+                                            className="btn btn-warning btn-sm w-100"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleAddToCompare(p.id);
+                                            }}
+                                        >
+                                            Сравнить
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}

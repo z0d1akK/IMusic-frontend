@@ -1,5 +1,6 @@
 import axios from './axiosInstance';
 import { extractRolesFromToken } from '../utils/jwt';
+import { loadUserComparisons } from '../utils/comparison';
 
 export const login = async (credentials) => {
     const response = await axios.post('/auth/login', credentials);
@@ -7,9 +8,16 @@ export const login = async (credentials) => {
 
     const roles = extractRolesFromToken(token);
 
+    localStorage.removeItem('comparisonId');
+    localStorage.removeItem('comparisonProducts');
+
     localStorage.setItem('userId', userId);
     localStorage.setItem('token', token);
     localStorage.setItem('roles', JSON.stringify(roles));
+
+    if (roles.includes('CLIENT')) {
+        await loadUserComparisons();
+    }
 
     return { token, roles };
 };
@@ -28,5 +36,5 @@ export const register = async (data) => {
 };
 
 export const logout = () => {
-    ['token', 'roles', 'userId'].forEach((key) => localStorage.removeItem(key));
+    ['token', 'roles', 'userId', 'comparisonId', 'comparisonProducts'].forEach((key) => localStorage.removeItem(key));
 };
