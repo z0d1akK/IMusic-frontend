@@ -292,7 +292,7 @@ export default function ProductCatalogPage() {
 
                                     {comparisonIds.includes(p.id) ? (
                                         <button
-                                            className="btn btn-outline-warning btn-sm w-100"
+                                            className="btn btn-warning btn-sm w-100"
                                             disabled
                                             onClick={(e) => e.stopPropagation()}
                                         >
@@ -300,7 +300,7 @@ export default function ProductCatalogPage() {
                                         </button>
                                     ) : (
                                         <button
-                                            className="btn btn-warning btn-sm w-100"
+                                            className="btn btn-outline-warning btn-sm w-100"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleAddToCompare(p.id);

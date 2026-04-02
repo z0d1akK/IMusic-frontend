@@ -14,6 +14,7 @@ import {
     addToWishlist,
     removeFromWishlist
 } from "../../utils/wishlist";
+import PriceHistoryModal from "../../components/PriceHistoryModal";
 
 export default function ProductDetailPage() {
     const {id} = useParams();
@@ -25,6 +26,12 @@ export default function ProductDetailPage() {
     const [inCart, setInCart] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
+
+    const [showPriceHistory, setShowPriceHistory] = useState(false);
+    const [priceHistory, setPriceHistory] = useState([]);
+    const [period, setPeriod] = useState(2);
+    const [loadingChart, setLoadingChart] = useState(false);
+
 
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
@@ -46,13 +53,11 @@ export default function ProductDetailPage() {
             .catch(() => setAttributes([]));
 
         if (isAuthenticated) {
-            // Check if product is in wishlist
             getWishlist().then(res => {
                 const exists = res.data.some(p => p.id === parseInt(id));
                 setIsFavorite(exists);
             }).catch(() => setIsFavorite(false));
 
-            // Check if product is in cart
             axios.get(`/clients/profile`)
                 .then(clientRes => {
                     const clientId = clientRes.data.id;
@@ -141,6 +146,30 @@ export default function ProductDetailPage() {
         }
     };
 
+    const fetchPriceHistory = (months) => {
+        setLoadingChart(true);
+
+        axios.get(`/products/${id}/price-history`, {
+            params: {months}
+        })
+            .then(res => setPriceHistory(res.data))
+            .catch(() => setPriceHistory([]))
+            .finally(() => setLoadingChart(false));
+    };
+
+    const handleOpenPriceHistory = () => {
+        setShowPriceHistory(true);
+
+        if (priceHistory.length === 0) {
+            fetchPriceHistory(period);
+        }
+    };
+
+    const handlePeriodChange = (months) => {
+        setPeriod(months);
+        fetchPriceHistory(months);
+    };
+
     if (loading || !product) return <div className="container mt-5 text-center">Загрузка...</div>;
 
     return (
@@ -161,7 +190,6 @@ export default function ProductDetailPage() {
                         <h4 className="text-success fw-bold">{product.price?.toFixed(2)} р.</h4>
 
                         <div className="mt-4 d-flex flex-wrap gap-2">
-                            {/* Кнопка добавления в корзину */}
                             {!isAuthenticated ? (
                                 <div className="alert alert-warning mb-0">
                                     <strong>Войдите</strong>, чтобы добавить товар в корзину
@@ -178,23 +206,29 @@ export default function ProductDetailPage() {
                                 </button>
                             )}
 
-                            {/* Кнопка избранного */}
-                            <button
-                                className={`btn ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}`}
-                                onClick={toggleWishlist}
-                                disabled={!isAuthenticated}
-                            >
-                                <i className="bi bi-heart me-2"></i>
-                                {isFavorite ? 'Убрать из избранного' : 'В избранное'}
-                            </button>
+                            {isAuthenticated && (
+                                <button className="btn btn-outline-primary" onClick={handleOpenPriceHistory}>
+                                    История цены
+                                </button>
+                            )}
 
-                            {/* Кнопка сравнения */}
-                            {isInComparison(product.id) ? (
+                            {isAuthenticated && (
+                                <button
+                                    className={`btn ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}`}
+                                    onClick={toggleWishlist}
+                                    disabled={!isAuthenticated}
+                                >
+                                    <i className="bi bi-heart me-2"></i>
+                                    {isFavorite ? 'Убрать из избранного' : 'В избранное'}
+                                </button>
+                            )}
+
+                            {isInComparison(product.id) && isAuthenticated ? (
                                 <button className="btn btn-outline-warning" disabled>
                                     <i className="bi bi-bar-chart me-2"></i>
                                     Товар уже в сравнении
                                 </button>
-                            ) : (
+                            ) : isAuthenticated && (
                                 <button
                                     className="btn btn-outline-warning"
                                     onClick={() => handleAddToCompare(product.id)}
@@ -229,12 +263,22 @@ export default function ProductDetailPage() {
                 </div>
             </div>
 
+            <PriceHistoryModal
+                show={showPriceHistory}
+                onClose={() => setShowPriceHistory(false)}
+                data={priceHistory}
+                period={period}
+                onPeriodChange={handlePeriodChange}
+                loading={loadingChart}
+            />
+
             {showToast && (
                 <div className="toast-container position-fixed bottom-0 end-0 p-3" style={{zIndex: 1055}}>
                     <div className="toast show align-items-center text-bg-success border-0">
                         <div className="d-flex">
                             <div className="toast-body">Товар добавлен в корзину!</div>
-                            <button type="button" className="btn-close btn-close-white me-2 m-auto" onClick={() => setShowToast(false)} />
+                            <button type="button" className="btn-close btn-close-white me-2 m-auto"
+                                    onClick={() => setShowToast(false)}/>
                         </div>
                     </div>
                 </div>
