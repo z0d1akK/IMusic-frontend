@@ -1,14 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import OrderDetailsModal from "../../components/order/OrderDetailsModal";
+import RepeatOrderModal from "../../components/order/RepeatOrderModal";
 
 const OrdersPage = () => {
     const [orders, setOrders] = useState([]);
     const [client, setClient] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showModal, setShowModal] = useState(false);
+
+    const [repeatOrderId, setRepeatOrderId] = useState(null);
+    const [showRepeatModal, setShowRepeatModal] = useState(false);
 
     const [page, setPage] = useState(0);
     const [size] = useState(10);
@@ -16,53 +21,54 @@ const OrdersPage = () => {
 
     const userId = localStorage.getItem("userId");
 
-    useEffect(() => {
-        const loadData = async () => {
-            if (!userId) {
-                setError("Пользователь не авторизован");
-                setLoading(false);
+    const loadData = useCallback(async () => {
+        if (!userId) {
+            setError("Пользователь не авторизован");
+            setLoading(false);
+            return;
+        }
+
+        try {
+            setLoading(true);
+            setError(null);
+
+            const profileRes = await axiosInstance.get("/clients/profile", {
+                suppressGlobalErrorHandler: true,
+            });
+
+            const clientData = profileRes.data;
+
+            if (!clientData || !clientData.id) {
+                setClient(null);
                 return;
             }
 
-            try {
-                setLoading(true);
-                setError(null);
+            setClient(clientData);
 
-                const profileRes = await axiosInstance.get("/clients/profile", {
-                    suppressGlobalErrorHandler: true,
-                });
-                const clientData = profileRes.data;
-                if (!clientData || !clientData.id) {
-                    setClient(null);
-                    setLoading(false);
-                    return;
-                }
+            const orderReq = {
+                clientId: clientData.id,
+                page,
+                size,
+                sortBy: "createdAt",
+                sortDirection: "DESC",
+            };
 
-                setClient(clientData);
+            const ordersRes = await axiosInstance.post("/orders/paged", orderReq);
+            const data = ordersRes.data;
 
-                const orderReq = {
-                    clientId: clientData.id,
-                    page,
-                    size,
-                    sortBy: "createdAt",
-                    sortDirection: "DESC",
-                };
-
-                const ordersRes = await axiosInstance.post("/orders/paged", orderReq);
-                const data = ordersRes.data;
-
-                setOrders(data.content || data);
-                setTotalPages(data.totalPages || 1);
-            } catch (err) {
-                console.error("Ошибка при загрузке заказов:", err);
-                setError("Не удалось загрузить заказы. Попробуйте позже.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadData();
+            setOrders(data.content || data);
+            setTotalPages(data.totalPages || 1);
+        } catch (err) {
+            console.error("Ошибка при загрузке заказов:", err);
+            setError("Не удалось загрузить заказы. Попробуйте позже.");
+        } finally {
+            setLoading(false);
+        }
     }, [userId, page, size]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     const openDetails = (order) => {
         setSelectedOrder(order);
@@ -72,6 +78,21 @@ const OrdersPage = () => {
     const closeModal = () => {
         setSelectedOrder(null);
         setShowModal(false);
+    };
+
+    const handleRepeat = (orderId) => {
+        setRepeatOrderId(orderId);
+        setShowRepeatModal(true);
+    };
+
+    const handleRepeatSuccess = async () => {
+        setShowRepeatModal(false);
+
+        if (page === 0) {
+            await loadData();
+        } else {
+            setPage(0);
+        }
     };
 
     if (loading) {
@@ -95,7 +116,9 @@ const OrdersPage = () => {
             <h2>Мои заказы</h2>
 
             {orders.length === 0 ? (
-                <div className="alert alert-info mt-4">Вы ещё не сделали заказов.</div>
+                <div className="alert alert-info mt-4">
+                    Вы ещё не сделали заказов.
+                </div>
             ) : (
                 <>
                     <table className="table table-hover mt-3 align-middle">
@@ -112,16 +135,27 @@ const OrdersPage = () => {
                         {orders.map((order) => (
                             <tr key={order.id}>
                                 <td>{order.id}</td>
-                                <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                                <td>
+                                    {new Date(order.createdAt).toLocaleDateString()}
+                                </td>
                                 <td>{order.statusName || "—"}</td>
                                 <td>{order.totalPrice?.toFixed(2)} ₽</td>
                                 <td>
-                                    <button
-                                        className="btn btn-warning btn-sm"
-                                        onClick={() => openDetails(order)}
-                                    >
-                                        Подробнее
-                                    </button>
+                                    <div className="d-flex gap-2">
+                                        <button
+                                            className="btn btn-warning btn-sm"
+                                            onClick={() => openDetails(order)}
+                                        >
+                                            Подробнее
+                                        </button>
+
+                                        <button
+                                            className="btn btn-outline-danger btn-sm"
+                                            onClick={() => handleRepeat(order.id)}
+                                        >
+                                            Повторить
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -137,13 +171,19 @@ const OrdersPage = () => {
                             >
                                 ← Назад
                             </button>
+
                             <span>
                                 Страница {page + 1} из {totalPages}
                             </span>
+
                             <button
                                 className="btn btn-outline-secondary btn-sm"
                                 disabled={page + 1 >= totalPages}
-                                onClick={() => setPage((p) => Math.min(p + 1, totalPages - 1))}
+                                onClick={() =>
+                                    setPage((p) =>
+                                        Math.min(p + 1, totalPages - 1)
+                                    )
+                                }
                             >
                                 Вперёд →
                             </button>
@@ -156,6 +196,15 @@ const OrdersPage = () => {
                 <OrderDetailsModal
                     orderId={selectedOrder.id}
                     onClose={closeModal}
+                />
+            )}
+
+            {showRepeatModal && (
+                <RepeatOrderModal
+                    orderId={repeatOrderId}
+                    show={showRepeatModal}
+                    onHide={() => setShowRepeatModal(false)}
+                    onSuccess={handleRepeatSuccess}
                 />
             )}
         </div>
