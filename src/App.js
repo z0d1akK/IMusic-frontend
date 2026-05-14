@@ -14,6 +14,7 @@ import EditProfilePage from "./pages/EditProfilePage";
 import AdminPage from "./pages/main/AdminHome";
 import ManagerPage from "./pages/main/ManagerHome";
 import HomePage from "./pages/main/PublicHome";
+import AboutPage from "./pages/main/AboutPage";
 
 import DictionaryManagementPage from "./pages/admin/DictionaryManagementPage";
 import UserManagementPage from "./pages/admin/UserManagementPage";
@@ -58,6 +59,7 @@ function App() {
                 <div className="flex-grow-1">
                     <Routes>
                         <Route path="/" element={<HomePage/>}/>
+                        <Route path="/about" element={<AboutPage/>}/>
                         <Route path="/login" element={<LoginPage/>}/>
                         <Route path="/register" element={<RegisterPage/>}/>
                         <Route path="/notfound" element={<NotFoundPage/>}/>

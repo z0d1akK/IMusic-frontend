@@ -72,9 +72,16 @@ const Navbar = () => {
                     <ul className="navbar-nav ms-auto align-items-center gap-2">
 
                         {(roles.includes('CLIENT') || !isAuthenticated) && (
+                            <>
+                            <li className="nav-item">
+                                <Link className="nav-link text-light" to="/about">
+                                    О нас
+                                </Link>
+                            </li>
                             <li className="nav-item">
                                 <Link className="nav-link text-light" to="/catalog">Каталог</Link>
                             </li>
+                            </>
                         )}
 
                             {(roles.includes('MANAGER')) && (
