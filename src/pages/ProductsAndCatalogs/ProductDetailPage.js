@@ -6,6 +6,7 @@ import {
     getComparisonId,
     setComparisonId,
     addProductToLocalComparison,
+    removeProductFromLocalComparison,
     isInComparison,
     syncComparisonWithServer
 } from "../../utils/comparison";
@@ -26,12 +27,13 @@ export default function ProductDetailPage() {
     const [inCart, setInCart] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
+    const [isInCompare, setIsInCompare] = useState(false);
+    const [loadingCompare, setLoadingCompare] = useState(false);
 
     const [showPriceHistory, setShowPriceHistory] = useState(false);
     const [priceHistory, setPriceHistory] = useState([]);
     const [period, setPeriod] = useState(2);
     const [loadingChart, setLoadingChart] = useState(false);
-
 
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
@@ -57,6 +59,8 @@ export default function ProductDetailPage() {
                 const exists = res.data.some(p => p.id === parseInt(id));
                 setIsFavorite(exists);
             }).catch(() => setIsFavorite(false));
+
+            setIsInCompare(isInComparison(parseInt(id)));
 
             axios.get(`/clients/profile`)
                 .then(clientRes => {
@@ -118,31 +122,53 @@ export default function ProductDetailPage() {
         action.then(() => setIsFavorite(!isFavorite));
     };
 
-    const handleAddToCompare = async (productId) => {
+    const toggleCompare = async () => {
         if (!isAuthenticated) {
             alert("Для добавления товаров в сравнение необходимо войти в аккаунт");
             navigate('/login');
             return;
         }
 
+        setLoadingCompare(true);
+
         try {
-            let comparisonId = getComparisonId();
+            if (isInCompare) {
+                let comparisonId = getComparisonId();
 
-            if (!comparisonId) {
-                const res = await axios.post('/products/comparisons', [productId]);
-                comparisonId = res.data;
-                setComparisonId(comparisonId);
+                if (comparisonId) {
+                    try {
+                        await axios.delete(`/products/comparisons/${comparisonId}/products/${parseInt(id)}`);
+                    } catch (e) {
+                        console.error('Ошибка при удалении из сравнения:', e);
+                    }
+                }
+
+                const remainingCount = removeProductFromLocalComparison(parseInt(id));
+                setIsInCompare(false);
+
+                if (remainingCount === 0) {
+                    setComparisonId(null);
+                }
             } else {
-                await axios.post(`/products/comparisons/${comparisonId}/products/${productId}`);
+                let comparisonId = getComparisonId();
+
+                if (!comparisonId) {
+                    const res = await axios.post('/products/comparisons', [parseInt(id)]);
+                    comparisonId = res.data;
+                    setComparisonId(comparisonId);
+                } else {
+                    await axios.post(`/products/comparisons/${comparisonId}/products/${parseInt(id)}`);
+                }
+
+                addProductToLocalComparison(parseInt(id));
+                setIsInCompare(true);
+                await syncComparisonWithServer();
             }
-
-            addProductToLocalComparison(productId);
-            await syncComparisonWithServer();
-
-            alert("Товар добавлен в сравнение");
         } catch (e) {
-            console.error('Ошибка при добавлении в сравнение:', e);
-            alert("Ошибка при добавлении в сравнение");
+            console.error('Ошибка при изменении сравнения:', e);
+            alert("Ошибка при изменении сравнения");
+        } finally {
+            setLoadingCompare(false);
         }
     };
 
@@ -175,7 +201,7 @@ export default function ProductDetailPage() {
     return (
         <div className="container mt-5">
             <div className="card shadow-lg p-4">
-                <div className="row g-4 align-items-center">
+                <div className="row g-4 align-items-start">
                     <div className="col-md-5 text-center">
                         <img
                             src={getImageUrl(product.imagePath)}
@@ -189,65 +215,70 @@ export default function ProductDetailPage() {
                         <p className="text-muted mb-3">{product.description || 'Описание отсутствует'}</p>
                         <h4 className="text-success fw-bold">{product.price?.toFixed(2)} р.</h4>
 
-                        <div className="mt-4 d-flex flex-wrap gap-2">
-                            {!isAuthenticated ? (
-                                <div className="alert alert-warning mb-0">
-                                    <strong>Войдите</strong>, чтобы добавить товар в корзину
-                                </div>
-                            ) : inCart ? (
-                                <button className="btn btn-secondary" disabled>
-                                    <i className="bi bi-check me-2"></i>
-                                    Уже в корзине
-                                </button>
-                            ) : (
-                                <button className="btn btn-success" onClick={handleAddToCart}>
-                                    <i className="bi bi-cart-plus me-2"></i>
-                                    Добавить в корзину
-                                </button>
-                            )}
+                        <div className="mt-4">
+                            <div className="mb-2">
+                                {!isAuthenticated ? (
+                                    <div className="alert alert-warning mb-0 py-2">
+                                        <small>Войдите, чтобы добавить товар в корзину</small>
+                                    </div>
+                                ) : inCart ? (
+                                    <button className="btn btn-secondary w-100" disabled>
+                                        Уже в корзине
+                                    </button>
+                                ) : (
+                                    <button className="btn btn-success w-100 py-2 fw-bold" onClick={handleAddToCart}>
+                                        Добавить в корзину
+                                    </button>
+                                )}
+                            </div>
 
-                            {isAuthenticated && (
-                                <button className="btn btn-outline-primary" onClick={handleOpenPriceHistory}>
-                                    История цены
-                                </button>
-                            )}
+                            <div className="d-flex gap-2">
+                                {isAuthenticated && (
+                                    <button
+                                        className="btn btn-outline-secondary flex-fill py-1"
+                                        onClick={handleOpenPriceHistory}
+                                    >
+                                        График цены
+                                    </button>
+                                )}
 
-                            {isAuthenticated && (
-                                <button
-                                    className={`btn ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}`}
-                                    onClick={toggleWishlist}
-                                    disabled={!isAuthenticated}
-                                >
-                                    <i className="bi bi-heart me-2"></i>
-                                    {isFavorite ? 'Убрать из избранного' : 'В избранное'}
-                                </button>
-                            )}
+                                {isAuthenticated && (
+                                    <button
+                                        className={`btn flex-fill py-1 ${
+                                            isFavorite ? 'btn-danger' : 'btn-outline-danger'
+                                        }`}
+                                        onClick={toggleWishlist}
+                                    >
+                                        {isFavorite ? 'В избранных' : 'В избранные'}
+                                    </button>
+                                )}
 
-                            {isInComparison(product.id) && isAuthenticated ? (
-                                <button className="btn btn-outline-warning" disabled>
-                                    <i className="bi bi-bar-chart me-2"></i>
-                                    Товар уже в сравнении
-                                </button>
-                            ) : isAuthenticated && (
-                                <button
-                                    className="btn btn-outline-warning"
-                                    onClick={() => handleAddToCompare(product.id)}
-                                    disabled={!isAuthenticated}
-                                >
-                                    <i className="bi bi-bar-chart me-2"></i>
-                                    Сравнить
-                                </button>
-                            )}
+                                {isAuthenticated && (
+                                    <button
+                                        className={`btn flex-fill py-1 ${
+                                            isInCompare ? 'btn-warning' : 'btn-outline-warning'
+                                        }`}
+                                        onClick={toggleCompare}
+                                        disabled={loadingCompare}
+                                    >
+                                        {loadingCompare ? (
+                                            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                                        ) : (
+                                            isInCompare ? 'В сравнении' : 'В сравнение'
+                                        )}
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {attributes.length > 0 && (
                             <div className="mt-4">
                                 <h5 className="mb-2">Характеристики</h5>
-                                <ul className="list-group">
+                                <ul className="list-group list-group-flush">
                                     {attributes.map(attr => (
-                                        <li key={attr.id} className="list-group-item d-flex justify-content-between">
+                                        <li key={attr.id} className="list-group-item d-flex justify-content-between px-0">
                                             <span className="fw-medium">{attr.name}</span>
-                                            <span>{attr.value || '-'}</span>
+                                            <span className="text-muted">{attr.value || '-'}</span>
                                         </li>
                                     ))}
                                 </ul>
@@ -255,8 +286,8 @@ export default function ProductDetailPage() {
                         )}
                     </div>
 
-                    <div className="text-end mt-4">
-                        <button className="btn btn-warning" onClick={() => navigate('/catalog')}>
+                    <div className="text-center text-md-end mt-4 pt-3 border-top">
+                        <button className="btn btn-warning px-4" onClick={() => navigate('/catalog')}>
                             Вернуться в каталог
                         </button>
                     </div>

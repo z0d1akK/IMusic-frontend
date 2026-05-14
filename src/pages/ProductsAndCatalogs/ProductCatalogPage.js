@@ -6,6 +6,8 @@ import {
     getComparisonId,
     setComparisonId,
     addProductToLocalComparison,
+    removeProductFromLocalComparison,
+    isInComparison,
     syncComparisonWithServer
 } from "../../utils/comparison";
 import {
@@ -35,7 +37,7 @@ export default function ProductCatalogPage() {
 
     const [comparisonIds, setComparisonIds] = useState([]);
     const [wishlistIds, setWishlistIds] = useState([]);
-
+    const [loadingCompare, setLoadingCompare] = useState({});
     const roles = JSON.parse(localStorage.getItem("roles")) || [];
     const token = localStorage.getItem('token');
     const isAuthenticated = !!token && roles.includes('CLIENT');
@@ -116,30 +118,68 @@ export default function ProductCatalogPage() {
         return u ? u.name : '';
     };
 
-    const handleAddToCompare = async (productId) => {
+    const toggleCompare = async (productId) => {
+        if (!isAuthenticated) {
+            alert("Для добавления товаров в сравнение необходимо войти в аккаунт");
+            navigate('/login');
+            return;
+        }
+
+        setLoadingCompare(prev => ({ ...prev, [productId]: true }));
+
         try {
-            let comparisonId = getComparisonId();
+            const isCurrentlyInComparison = comparisonIds.includes(productId);
 
-            if (!comparisonId) {
-                const res = await axios.post('/products/comparisons', [productId]);
-                comparisonId = res.data;
-                setComparisonId(comparisonId);
+            if (isCurrentlyInComparison) {
+                let comparisonId = getComparisonId();
+
+                if (comparisonId) {
+                    try {
+                        await axios.delete(`/products/comparisons/${comparisonId}/products/${productId}`);
+                    } catch (e) {
+                        console.error('Ошибка при удалении из сравнения:', e);
+                        if (e.response?.status === 404) {
+                            console.log('Сравнение не найдено на сервере, обновляем локально');
+                        }
+                    }
+                }
+
+                const remainingCount = removeProductFromLocalComparison(productId);
+                setComparisonIds(prev => prev.filter(id => id !== productId));
+
+                if (remainingCount === 0) {
+                    setComparisonId(null);
+                }
             } else {
-                await axios.post(`/products/comparisons/${comparisonId}/products/${productId}`);
+                let comparisonId = getComparisonId();
+
+                if (!comparisonId) {
+                    const res = await axios.post('/products/comparisons', [productId]);
+                    comparisonId = res.data;
+                    setComparisonId(comparisonId);
+                } else {
+                    await axios.post(`/products/comparisons/${comparisonId}/products/${productId}`);
+                }
+
+                addProductToLocalComparison(productId);
+                setComparisonIds(prev => [...prev, productId]);
+                await syncComparisonWithServer();
             }
-
-            addProductToLocalComparison(productId);
-            setComparisonIds(prev => [...prev, productId]);
-
-            await syncComparisonWithServer();
-
         } catch (e) {
-            console.error('Ошибка при добавлении в сравнение:', e);
-            alert("Ошибка при добавлении в сравнение");
+            console.error('Ошибка при изменении сравнения:', e);
+            alert("Ошибка при изменении сравнения");
+        } finally {
+            setLoadingCompare(prev => ({ ...prev, [productId]: false }));
         }
     };
 
     const toggleWishlist = (productId) => {
+        if (!isAuthenticated) {
+            alert("Для добавления товаров в избранное необходимо войти в аккаунт");
+            navigate('/login');
+            return;
+        }
+
         if (wishlistIds.includes(productId)) {
             removeFromWishlist(productId)
                 .then(() => setWishlistIds(prev => prev.filter(id => id !== productId)));
@@ -149,10 +189,9 @@ export default function ProductCatalogPage() {
         }
     };
 
-
     return (
         <div className="container mt-4">
-            <div className="d-flex justify-content-between align-items-center mb-3">
+            <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                 <h2 className="mb-0">Каталог товаров</h2>
                 <input
                     className="form-control w-50"
@@ -249,6 +288,7 @@ export default function ProductCatalogPage() {
                                     src={getImageUrl(p.imagePath)}
                                     alt={p.name}
                                     style={{width: 120, height: 120, objectFit: 'contain'}}
+                                    loading="lazy"
                                 />
                             </div>
                             <div className="mt-2 text-center" style={{minHeight: 90}}>
@@ -273,7 +313,6 @@ export default function ProductCatalogPage() {
 
                             {isAuthenticated && (
                                 <div className="mt-auto d-flex flex-column gap-2">
-
                                     <button
                                         className={`btn btn-sm w-100 ${
                                             wishlistIds.includes(p.id)
@@ -285,30 +324,29 @@ export default function ProductCatalogPage() {
                                             toggleWishlist(p.id);
                                         }}
                                     >
-                                        {wishlistIds.includes(p.id)
-                                            ? 'Убрать из избранного'
-                                            : 'В избранное'}
+                                        {wishlistIds.includes(p.id) ? 'Убрать из избранных' : 'В избранное'}
                                     </button>
 
-                                    {comparisonIds.includes(p.id) ? (
-                                        <button
-                                            className="btn btn-warning btn-sm w-100"
-                                            disabled
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            Уже в сравнении
-                                        </button>
-                                    ) : (
-                                        <button
-                                            className="btn btn-outline-warning btn-sm w-100"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleAddToCompare(p.id);
-                                            }}
-                                        >
-                                            Сравнить
-                                        </button>
-                                    )}
+                                    <button
+                                        className={`btn btn-sm w-100 ${
+                                            comparisonIds.includes(p.id)
+                                                ? 'btn-warning'
+                                                : 'btn-outline-warning'
+                                        }`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleCompare(p.id);
+                                        }}
+                                        disabled={loadingCompare[p.id]}
+                                    >
+                                        {loadingCompare[p.id] ? (
+                                            <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        ) : comparisonIds.includes(p.id) ? (
+                                            'Уже в сравнении'
+                                        ) : (
+                                            'Сравнить'
+                                        )}
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -319,6 +357,9 @@ export default function ProductCatalogPage() {
             {totalPages > 1 && (
                 <nav>
                     <ul className="pagination justify-content-center">
+                        <li className={`page-item ${page === 0 ? 'disabled' : ''}`}>
+                            <button className="page-link" onClick={() => setPage(prev => prev - 1)}>«</button>
+                        </li>
                         {Array.from({length: totalPages}, (_, i) => (
                             <li key={i} className={`page-item ${page === i ? 'active' : ''}`}>
                                 <button className="page-link bg-warning text-black" onClick={() => setPage(i)}>
@@ -326,6 +367,9 @@ export default function ProductCatalogPage() {
                                 </button>
                             </li>
                         ))}
+                        <li className={`page-item ${page === totalPages - 1 ? 'disabled' : ''}`}>
+                            <button className="page-link" onClick={() => setPage(prev => prev + 1)}>»</button>
+                        </li>
                     </ul>
                 </nav>
             )}

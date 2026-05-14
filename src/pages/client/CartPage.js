@@ -244,7 +244,7 @@ const CartPage = () => {
                             <button className="btn btn-secondary me-2 mb-2" onClick={() => navigate("/catalog")}>
                                 Вернуться в каталог
                             </button>
-                            <button className="btn btn-outline-danger" onClick={handleClearCart}>
+                            <button className="btn btn-outline-danger me-2 mb-2" onClick={handleClearCart}>
                                 Очистить корзину
                             </button>
                         </div>
@@ -262,7 +262,6 @@ const CartPage = () => {
                 </>
             )}
 
-            {/* Модалка */}
             <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
                 <Modal.Header closeButton>
                     <Modal.Title>Подтверждение заказа</Modal.Title>
