@@ -60,7 +60,11 @@ const CartPage = () => {
     const handleQuantityInputChange = (itemId, stock, value) => {
         setTempQuantities(prev => ({ ...prev, [itemId]: value }));
         const quantity = parseInt(value);
-        if (isNaN(quantity) || quantity < 1) return;
+        if (isNaN(quantity) || quantity < 1) {
+            alert('Минимальное количество для покупки 1шт.');
+            setTempQuantities(prev => ({ ...prev, [itemId]: 1 }));
+            return;
+        }
         if (quantity > stock) {
             alert(`На складе доступно только ${stock} шт.`);
             setTempQuantities(prev => ({ ...prev, [itemId]: stock }));

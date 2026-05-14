@@ -48,7 +48,11 @@ const RepeatOrderModal = ({ orderId, show, onHide, onSuccess }) => {
         setTempQuantities(prev => ({ ...prev, [index]: value }));
 
         const quantity = parseInt(value);
-        if (isNaN(quantity) || quantity < 1) return;
+        if (isNaN(quantity) || quantity < 1) {
+            alert(`Минимальное количество товара 1 шт.`);
+            setTempQuantities(prev => ({ ...prev, [index]: 1 }));
+            return;
+        }
 
         if (quantity > stock) {
             alert(`Доступно только ${stock} шт.`);
