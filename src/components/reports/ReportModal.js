@@ -59,7 +59,7 @@ const ReportModal = ({ show, onClose, role, managerId }) => {
         m.fullName?.toLowerCase().includes(managerSearch.toLowerCase())
     );
 
-    const requireDates = ["admin_sales", "manager_sales", "manager_top_clients", "manager_top_products"];
+    const requireDates = ["admin_sales", "manager_sales", "manager_top_clients", "manager_top_products", "admin_top_managers", "admin_top_products"];
     const requireManager = ["manager_sales", "manager_top_clients", "manager_top_products"];
     const allowGroupBy = ["admin_sales", "manager_sales"];
     const allowLimit = ["admin_top_managers", "admin_top_products", "manager_top_clients", "manager_top_products"];
